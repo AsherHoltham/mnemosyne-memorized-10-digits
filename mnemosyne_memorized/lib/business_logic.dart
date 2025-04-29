@@ -11,7 +11,6 @@ class DeltaTime {
   static final instance = DeltaTime._();
 
   Duration _last = Duration.zero;
-
   Duration deltaTime = Duration.zero;
 
   void _onFrame(Duration timestamp) {
@@ -23,11 +22,27 @@ class DeltaTime {
   }
 }
 
+abstract class MnemosyneEvent {}
+
+class OutputEvent extends MnemosyneEvent {}
+
 class Mnemosyne {
-  final deltaTime = DeltaTime.instance;
-  Mnemosyne();
+  final delta = DeltaTime.instance;
+  void outPut() {
+    print('Δt: ${delta.deltaTime.inMicroseconds} μs');
+  }
 }
 
-class MnemosyneRootStream extends Bloc<dynamic, Mnemosyne> {
-  MnemosyneRootStream() : super(Mnemosyne());
+class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
+  MnemosyneRootStream() : super(Mnemosyne()) {
+    on<OutputEvent>((_, __) => state.outPut());
+    WidgetsFlutterBinding.ensureInitialized();
+    SchedulerBinding.instance.addPersistentFrameCallback(_tick);
+    SchedulerBinding.instance.scheduleFrame();
+  }
+
+  void _tick(Duration timestamp) {
+    add(OutputEvent());
+    SchedulerBinding.instance.scheduleFrame();
+  }
 }
