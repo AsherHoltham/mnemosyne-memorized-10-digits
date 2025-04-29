@@ -22,12 +22,28 @@ class DeltaTime {
   }
 }
 
-abstract class MnemosyneEvent {}
+abstract class MnemosyneEvent {
+  const MnemosyneEvent();
+}
 
 class OutputEvent extends MnemosyneEvent {}
 
+class DrawEvent extends MnemosyneEvent {
+  const DrawEvent();
+}
+
+class UndoDrawEvent extends MnemosyneEvent {}
+
 class Mnemosyne {
-  final delta = DeltaTime.instance;
+  final DeltaTime delta = DeltaTime.instance;
+  final bool hasDrawn;
+
+  Mnemosyne({this.hasDrawn = false});
+
+  Mnemosyne copyWith({bool? hasDrawn}) {
+    return Mnemosyne(hasDrawn: hasDrawn ?? this.hasDrawn);
+  }
+
   void outPut() {
     print('Δt: ${delta.deltaTime.inMicroseconds} μs');
   }
@@ -35,10 +51,19 @@ class Mnemosyne {
 
 class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
   MnemosyneRootStream() : super(Mnemosyne()) {
-    on<OutputEvent>((_, __) => state.outPut());
     WidgetsFlutterBinding.ensureInitialized();
     SchedulerBinding.instance.addPersistentFrameCallback(_tick);
     SchedulerBinding.instance.scheduleFrame();
+
+    on<OutputEvent>((_, __) => state.outPut());
+
+    on<DrawEvent>((event, emit) {
+      emit(state.copyWith(hasDrawn: true));
+    });
+
+    on<UndoDrawEvent>((event, emit) {
+      emit(state.copyWith(hasDrawn: false));
+    });
   }
 
   void _tick(Duration timestamp) {
