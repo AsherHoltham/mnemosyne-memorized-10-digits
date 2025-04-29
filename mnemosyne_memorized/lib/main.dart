@@ -4,8 +4,8 @@ import 'interface.dart';
 import 'business_logic.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  DeltaTime.instance;
+  // WidgetsFlutterBinding.ensureInitialized();
+  // DeltaTime.instance;
   runApp(
     BlocProvider(create: (_) => MnemosyneRootStream(), child: const Root()),
   );
@@ -28,14 +28,19 @@ class RootPage extends StatelessWidget {
       builder: (context, constraints) {
         final double screenWidth = constraints.maxWidth;
         final double screenHeight = constraints.maxHeight;
+        final double padDim = screenHeight / 2;
+
         return BlocBuilder<MnemosyneRootStream, Mnemosyne>(
           builder: (context, mnemo) {
-            final dtMs = mnemo.delta.deltaTime.inMicroseconds;
+            //final dtMs = mnemo.delta.deltaTime.inMicroseconds;
             return Scaffold(
+              backgroundColor: Color.fromARGB(255, 42, 42, 42),
               body: Center(
-                child: Text(
-                  'Frame Δt: $dtMs ms',
-                  style: TextStyle(fontSize: 24),
+                child: Container(
+                  width: padDim,
+                  height: padDim,
+                  color: Colors.white,
+                  child: DrawingPad(width: padDim, height: padDim),
                 ),
               ),
             );

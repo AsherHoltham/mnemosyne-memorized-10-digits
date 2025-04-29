@@ -9,37 +9,60 @@ const List<Color> networkGraphColors = [
   Color(0xFF8A2BE2), // Blue Violet L5 on gradient from transparrent to this
 ];
 
-class DrawingSpaceTransition extends CustomPainter {
-  final Animation<double> progress;
-  final List<Offset> start, end;
-  final double cellSize;
-  final Paint paintFill;
+class DrawingPad extends StatefulWidget {
+  final double width;
+  final double height;
 
-  DrawingSpaceTransition(this.progress, this.start, this.end, this.cellSize)
-    : paintFill = Paint()..color = Colors.blue,
-      super(repaint: progress);
+  const DrawingPad({super.key, required this.width, required this.height});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final t = progress.value;
-    for (int i = 0; i < start.length; i++) {
-      // interpolate position
-      final pos = Offset.lerp(start[i], end[i], t)!;
-      // interpolate corner radius: 0 → cellSize/2
-      final r = (cellSize / 2) * t;
-      final rect = Rect.fromCenter(
-        center: pos,
-        width: cellSize,
-        height: cellSize,
-      );
-      // draw rounded rect (morphing square→circle)
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, Radius.circular(r)),
-        paintFill,
-      );
+  // ignore: library_private_types_in_public_api
+  _DrawingPadState createState() => _DrawingPadState();
+}
+
+class _DrawingPadState extends State<DrawingPad> {
+  final _points = <Offset?>[];
+
+  @override
+  Widget build(BuildContext context) {
+    final stroke = widget.width / 28.0;
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: GestureDetector(
+        onPanUpdate: (d) {
+          final box = context.findRenderObject() as RenderBox;
+          setState(() => _points.add(box.globalToLocal(d.globalPosition)));
+        },
+        onPanEnd: (_) => _points.add(null),
+        child: CustomPaint(
+          size: Size(widget.width, widget.height),
+          painter: _DrawingPainter(_points, stroke),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawingPainter extends CustomPainter {
+  final List<Offset?> points;
+  final double strokeWidth;
+  _DrawingPainter(this.points, this.strokeWidth);
+
+  @override
+  void paint(Canvas c, Size s) {
+    final paint =
+        Paint()
+          ..color = Colors.black
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = strokeWidth;
+    for (var i = 0; i < points.length - 1; i++) {
+      if (points[i] != null && points[i + 1] != null) {
+        c.drawLine(points[i]!, points[i + 1]!, paint);
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant DrawingSpaceTransition old) => false;
+  bool shouldRepaint(_) => true;
 }
