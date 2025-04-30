@@ -30,3 +30,5 @@ flutter:
     - family: "alte haas grotesk"
       fonts:
         - asset: "fonts/AlteHaasGroteskRegular.ttf"
+  assets:
+    - "lib/data/mnist_weights.json"
