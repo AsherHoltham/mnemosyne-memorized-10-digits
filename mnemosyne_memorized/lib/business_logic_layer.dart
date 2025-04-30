@@ -36,14 +36,23 @@ class UndoDrawEvent extends MnemosyneEvent {
   const UndoDrawEvent();
 }
 
+class AnimationEvent extends MnemosyneEvent {
+  const AnimationEvent();
+}
+
 class Mnemosyne {
   final DeltaTime delta = DeltaTime.instance;
   final bool hasDrawn;
+  final bool startAnimation;
 
-  Mnemosyne({this.hasDrawn = false});
+  Mnemosyne({this.hasDrawn = false, this.startAnimation = false});
 
-  Mnemosyne copyWith({bool? hasDrawn}) {
+  Mnemosyne drawing({bool? hasDrawn}) {
     return Mnemosyne(hasDrawn: hasDrawn ?? this.hasDrawn);
+  }
+
+  Mnemosyne animating({bool? startAnimation}) {
+    return Mnemosyne(startAnimation: startAnimation ?? this.startAnimation);
   }
 
   void outPut() {
@@ -60,11 +69,15 @@ class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
     on<OutputEvent>((_, __) => state.outPut());
 
     on<DrawEvent>((event, emit) {
-      emit(state.copyWith(hasDrawn: true));
+      emit(state.drawing(hasDrawn: true));
     });
 
     on<UndoDrawEvent>((event, emit) {
-      emit(state.copyWith(hasDrawn: false));
+      emit(state.drawing(hasDrawn: false));
+    });
+
+    on<AnimationEvent>((event, emit) {
+      emit(state.animating(startAnimation: true));
     });
   }
 

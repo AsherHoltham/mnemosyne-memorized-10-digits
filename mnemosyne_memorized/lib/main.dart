@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'interface_layer.dart';
 import 'business_logic_layer.dart';
 
-void main() => runApp(
-  BlocProvider(create: (_) => MnemosyneRootStream(), child: const Root()),
-);
+void main() async {
+  runApp(
+    BlocProvider(create: (_) => MnemosyneRootStream(), child: const Root()),
+  );
+}
 
 class Root extends StatelessWidget {
   const Root({super.key});
@@ -58,7 +60,7 @@ class RootPage extends StatelessWidget {
                       children: [
                         Text("Draw a Digit Below", style: planeTextStyle)
                             .animate(
-                              !mnemo.hasDrawn,
+                              !mnemo.hasDrawn && !mnemo.startAnimation,
                               duration: Duration(milliseconds: 200),
                             )
                             .fade()
@@ -74,7 +76,7 @@ class RootPage extends StatelessWidget {
                                 padKey.currentState?.clear();
                               },
                             )
-                            .animate(mnemo.hasDrawn)
+                            .animate(mnemo.hasDrawn && !mnemo.startAnimation)
                             .fade()
                             .slide(from: const Offset(0, .2)),
                       ],
@@ -83,9 +85,11 @@ class RootPage extends StatelessWidget {
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onPanDown: (_) {
-                        context.read<MnemosyneRootStream>().add(
-                          const DrawEvent(),
-                        );
+                        if (!mnemo.startAnimation) {
+                          context.read<MnemosyneRootStream>().add(
+                            const DrawEvent(),
+                          );
+                        }
                       },
 
                       child: Container(
@@ -96,16 +100,25 @@ class RootPage extends StatelessWidget {
                           key: padKey,
                           width: padDim,
                           height: padDim,
+                          enableDrawing: !mnemo.startAnimation,
                         ),
                       ),
                     ),
                     SizedBox(height: spacing),
                     MyButton(
-                      scale: buttonScale,
-                      childStyle: buttonTextStyle,
-                      child: Text("Show Mnemosyne"),
-                      onPressed: () => {},
-                    ).animate(mnemo.hasDrawn).fade().slide(from: Offset(0, .2)),
+                          scale: buttonScale,
+                          childStyle: buttonTextStyle,
+                          child: Text("Show Mnemosyne"),
+                          onPressed:
+                              () => {
+                                context.read<MnemosyneRootStream>().add(
+                                  const AnimationEvent(),
+                                ),
+                              },
+                        )
+                        .animate(mnemo.hasDrawn && !mnemo.startAnimation)
+                        .fade()
+                        .slide(from: Offset(0, .2)),
                   ],
                 ),
               ),

@@ -1,40 +1,63 @@
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:math' as math;
+import 'dart:convert';
 
 class Model {
-  final List<List<double>> modelWeights;
-  final List<double> modelBiases;
+  final List<List<List<double>>> modelWeights;
+  final List<List<double>> modelBiases;
+  Model({required this.modelWeights, required this.modelBiases});
 
-  Model({List<List<double>>? weights, List<double>? biases})
-    : modelWeights = weights ?? [<double>[]],
-      modelBiases = biases ?? [];
+  factory Model.fromJsonArray(List<dynamic> jsonArray) {
+    final layerCount = jsonArray.length ~/ 2;
+    final weightJson = jsonArray.sublist(0, layerCount);
+    final biasJson = jsonArray.sublist(layerCount);
+
+    final weights =
+        weightJson.map<List<List<double>>>((layer) {
+          final rows = layer as List;
+          return rows.map<List<double>>((r) {
+            return (r as List)
+                .map<double>((e) => (e as num).toDouble())
+                .toList();
+          }).toList();
+        }).toList();
+
+    final biases =
+        biasJson.map<List<double>>((b) {
+          return (b as List).map<double>((e) => (e as num).toDouble()).toList();
+        }).toList();
+
+    return Model(modelWeights: weights, modelBiases: biases);
+  }
+}
+
+class MnemosyneData {
+  final List<List<double>> latestActivations = [];
+  late final Model mnemosyneBrain;
+
+  Future<void> getTrainedModelData() async {
+    final modelStr = await rootBundle.loadString('assets/mnist_weights.json');
+    final modelArray = jsonDecode(modelStr) as List<dynamic>;
+    mnemosyneBrain = Model.fromJsonArray(modelArray);
+  }
 }
 
 abstract class MnemosyneDataEvent {
   const MnemosyneDataEvent();
 }
 
-class UpdateData extends MnemosyneDataEvent {
-  const UpdateData();
+class UpdateInputData extends MnemosyneDataEvent {
+  const UpdateInputData();
 }
 
-class MnemosyneData {
-  final List<List<double>> latestActivations = [];
-  final Model mnemosyneBrain = Model();
-
-  Future<String> getTrainedModelData() async {
-    final String model = await rootBundle.loadString(
-      "lib/data/mnist_weights.json",
-    );
-    return model;
-  }
-
-  Future<List<List<List<double>>>> parseModel() async {}
+class UpdateActivations extends MnemosyneDataEvent {
+  const UpdateActivations();
 }
 
 class MnemosyneDataStream extends Bloc<MnemosyneDataEvent, MnemosyneData> {
   MnemosyneDataStream() : super(MnemosyneData()) {
-    on<UpdateData>((_, __) => {});
+    on<UpdateInputData>((_, __) => {});
+    on<UpdateActivations>((_, __) => {});
   }
 }

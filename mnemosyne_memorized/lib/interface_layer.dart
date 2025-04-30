@@ -12,8 +12,14 @@ const List<Color> networkGraphColors = [
 class DrawingPad extends StatefulWidget {
   final double width;
   final double height;
+  final bool enableDrawing;
 
-  const DrawingPad({super.key, required this.width, required this.height});
+  const DrawingPad({
+    super.key,
+    required this.width,
+    required this.height,
+    required this.enableDrawing,
+  });
 
   @override
   // ignore: library_private_types_in_public_api
@@ -22,6 +28,8 @@ class DrawingPad extends StatefulWidget {
 
 class DrawingPadState extends State<DrawingPad> {
   final _points = <Offset?>[];
+
+  bool get _canDraw => widget.enableDrawing;
 
   void clear() {
     setState(() {
@@ -36,11 +44,21 @@ class DrawingPadState extends State<DrawingPad> {
       width: widget.width,
       height: widget.height,
       child: GestureDetector(
-        onPanUpdate: (d) {
-          final box = context.findRenderObject() as RenderBox;
-          setState(() => _points.add(box.globalToLocal(d.globalPosition)));
+        onPanUpdate: (details) {
+          if (_canDraw) {
+            final box = context.findRenderObject() as RenderBox;
+            setState(() {
+              _points.add(box.globalToLocal(details.globalPosition));
+            });
+          }
         },
-        onPanEnd: (_) => _points.add(null),
+        onPanEnd: (details) {
+          if (_canDraw) {
+            setState(() {
+              _points.add(null);
+            });
+          }
+        },
         child: ClipRect(
           child: CustomPaint(
             size: Size(widget.width, widget.height),
