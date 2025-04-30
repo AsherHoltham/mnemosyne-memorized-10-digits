@@ -32,7 +32,9 @@ class DrawEvent extends MnemosyneEvent {
   const DrawEvent();
 }
 
-class UndoDrawEvent extends MnemosyneEvent {}
+class UndoDrawEvent extends MnemosyneEvent {
+  const UndoDrawEvent();
+}
 
 class Mnemosyne {
   final DeltaTime delta = DeltaTime.instance;

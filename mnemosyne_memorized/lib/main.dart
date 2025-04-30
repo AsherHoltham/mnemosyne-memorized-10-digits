@@ -22,11 +22,13 @@ class RootPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final padKey = GlobalKey<DrawingPadState>();
         final double screenWidth = constraints.maxWidth;
         final double screenHeight = constraints.maxHeight;
-        final double padDim = screenHeight / 2;
+        final double padDim = screenHeight / 1.5;
         final double spacing = screenHeight / 40;
-        final double fontSize = screenWidth * 0.0125;
+        final double fontSize = screenWidth * 0.013;
+        final double buttonScale = screenWidth * 1 / 20;
 
         TextStyle planeTextStyle = TextStyle(
           color: Colors.white,
@@ -34,13 +36,13 @@ class RootPage extends StatelessWidget {
           fontWeight: FontWeight.w700,
           fontSize: fontSize,
         );
-
         TextStyle buttonTextStyle = TextStyle(
           color: Color.fromARGB(255, 42, 42, 42),
           fontFamily: 'alte haas grotesk',
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w900,
           fontSize: fontSize,
         );
+
         return BlocBuilder<MnemosyneRootStream, Mnemosyne>(
           builder: (context, mnemo) {
             //final dtMs = mnemo.delta.deltaTime.inMicroseconds;
@@ -51,10 +53,32 @@ class RootPage extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text("Draw a Digit Below", style: planeTextStyle)
-                        .animate(!mnemo.hasDrawn)
-                        .fade()
-                        .slide(from: Offset(0, .2)),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Text("Draw a Digit Below", style: planeTextStyle)
+                            .animate(
+                              !mnemo.hasDrawn,
+                              duration: Duration(milliseconds: 200),
+                            )
+                            .fade()
+                            .slide(from: const Offset(0, .2)),
+                        MyButton(
+                              scale: buttonScale,
+                              childStyle: buttonTextStyle,
+                              child: const Text("Reset Drawing"),
+                              onPressed: () {
+                                context.read<MnemosyneRootStream>().add(
+                                  const UndoDrawEvent(),
+                                );
+                                padKey.currentState?.clear();
+                              },
+                            )
+                            .animate(mnemo.hasDrawn)
+                            .fade()
+                            .slide(from: const Offset(0, .2)),
+                      ],
+                    ),
                     SizedBox(height: spacing),
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
@@ -68,11 +92,20 @@ class RootPage extends StatelessWidget {
                         width: padDim,
                         height: padDim,
                         color: Colors.white,
-                        child: DrawingPad(width: padDim, height: padDim),
+                        child: DrawingPad(
+                          key: padKey,
+                          width: padDim,
+                          height: padDim,
+                        ),
                       ),
                     ),
                     SizedBox(height: spacing),
-                    Text("Bottom"),
+                    MyButton(
+                      scale: buttonScale,
+                      childStyle: buttonTextStyle,
+                      child: Text("Show Mnemosyne"),
+                      onPressed: () => {},
+                    ).animate(mnemo.hasDrawn).fade().slide(from: Offset(0, .2)),
                   ],
                 ),
               ),

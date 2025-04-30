@@ -17,11 +17,17 @@ class DrawingPad extends StatefulWidget {
 
   @override
   // ignore: library_private_types_in_public_api
-  _DrawingPadState createState() => _DrawingPadState();
+  DrawingPadState createState() => DrawingPadState();
 }
 
-class _DrawingPadState extends State<DrawingPad> {
+class DrawingPadState extends State<DrawingPad> {
   final _points = <Offset?>[];
+
+  void clear() {
+    setState(() {
+      _points.clear();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,45 +183,49 @@ class _AnimateWidgetState extends State<AnimateWidget>
 extension AnimateExtension on Widget {
   AnimateWidget animate(
     bool show, {
-    Duration duration = const Duration(milliseconds: 700),
+    Duration duration = const Duration(milliseconds: 800),
   }) {
     return AnimateWidget(show: show, duration: duration, child: this);
   }
 }
 
 class MyButton extends StatelessWidget {
+  final double scale;
   final Widget child;
   final VoidCallback onPressed;
   final Color? color;
   final double borderRadius;
   final EdgeInsetsGeometry padding;
+  final TextStyle childStyle;
 
   const MyButton({
     super.key,
+    required this.scale,
     required this.child,
     required this.onPressed,
+    required this.childStyle,
     this.color = Colors.white,
-    this.borderRadius = 8,
-    this.padding = const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+    this.borderRadius = 4,
+    this.padding = const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
   });
 
   @override
   Widget build(BuildContext context) {
-    final bg = color ?? Theme.of(context).colorScheme.primary;
     return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(borderRadius),
-        onTap: onPressed,
-        child: Padding(
-          padding: padding,
-          child: DefaultTextStyle(
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onPrimary,
-              fontWeight: FontWeight.w600,
+      color: color,
+      borderRadius: BorderRadius.circular(scale / 8),
+      child: SizedBox(
+        width: scale * 2.7,
+        height: scale,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(borderRadius),
+          onTap: onPressed,
+          child: Padding(
+            padding: padding,
+            child: DefaultTextStyle(
+              style: childStyle,
+              child: Center(child: child),
             ),
-            child: Center(child: child),
           ),
         ),
       ),
