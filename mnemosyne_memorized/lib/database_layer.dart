@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:math' as math;
+//import 'dart:math' as math;
 import 'dart:convert';
 
 class Model {
@@ -57,7 +57,7 @@ class UpdateActivations extends MnemosyneDataEvent {
 
 class MnemosyneDataStream extends Bloc<MnemosyneDataEvent, MnemosyneData> {
   MnemosyneDataStream() : super(MnemosyneData()) {
-    on<UpdateInputData>((_, __) => {});
-    on<UpdateActivations>((_, __) => {});
+    on<UpdateInputData>((event, emit) {});
+    on<UpdateActivations>((event, emit) {});
   }
 }

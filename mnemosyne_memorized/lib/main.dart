@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'interface_layer.dart';
 import 'business_logic_layer.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
   runApp(
@@ -13,18 +14,22 @@ class Root extends StatelessWidget {
   const Root({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: const RootPage());
+    return MaterialApp(
+      // localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // supportedLocales: AppLocalizations.supportedLocales,
+      home: RootPage(),
+    );
   }
 }
 
 class RootPage extends StatelessWidget {
-  const RootPage({super.key});
+  RootPage({super.key});
+  final GlobalKey<DrawingPadState> padKey = GlobalKey<DrawingPadState>();
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final padKey = GlobalKey<DrawingPadState>();
         final double screenWidth = constraints.maxWidth;
         final double screenHeight = constraints.maxHeight;
         final double padDim = screenHeight / 1.5;
@@ -91,7 +96,6 @@ class RootPage extends StatelessWidget {
                           );
                         }
                       },
-
                       child: Container(
                         width: padDim,
                         height: padDim,

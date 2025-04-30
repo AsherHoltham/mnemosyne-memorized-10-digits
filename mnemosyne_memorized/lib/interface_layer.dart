@@ -27,70 +27,68 @@ class DrawingPad extends StatefulWidget {
 }
 
 class DrawingPadState extends State<DrawingPad> {
-  final _points = <Offset?>[];
+  final _normPoints = <Offset?>[];
 
   bool get _canDraw => widget.enableDrawing;
 
-  void clear() {
-    setState(() {
-      _points.clear();
-    });
-  }
+  void clear() => setState(() => _normPoints.clear());
 
   @override
   Widget build(BuildContext context) {
-    final stroke = widget.width / 28.0;
     return SizedBox(
       width: widget.width,
       height: widget.height,
       child: GestureDetector(
-        onPanUpdate: (details) {
-          if (_canDraw) {
-            final box = context.findRenderObject() as RenderBox;
-            setState(() {
-              _points.add(box.globalToLocal(details.globalPosition));
-            });
-          }
+        onPanUpdate: (d) {
+          if (!_canDraw) return;
+          final local = d.localPosition;
+          setState(() {
+            _normPoints.add(
+              Offset(local.dx / widget.width, local.dy / widget.height),
+            );
+          });
         },
-        onPanEnd: (details) {
-          if (_canDraw) {
-            setState(() {
-              _points.add(null);
-            });
-          }
+        onPanEnd: (_) {
+          if (!_canDraw) return;
+          setState(() => _normPoints.add(null));
         },
-        child: ClipRect(
-          child: CustomPaint(
-            size: Size(widget.width, widget.height),
-            painter: _DrawingPainter(_points, stroke),
-          ),
+        child: CustomPaint(
+          size: Size(widget.width, widget.height),
+          painter: _ScaledPainter(_normPoints, widget.width / 28.0),
         ),
       ),
     );
   }
 }
 
-class _DrawingPainter extends CustomPainter {
-  final List<Offset?> points;
+class _ScaledPainter extends CustomPainter {
+  final List<Offset?> normPts;
   final double strokeWidth;
-  _DrawingPainter(this.points, this.strokeWidth);
+  _ScaledPainter(this.normPts, this.strokeWidth);
 
   @override
-  void paint(Canvas c, Size s) {
+  void paint(Canvas canvas, Size size) {
     final paint =
         Paint()
           ..color = Colors.black
           ..strokeCap = StrokeCap.round
           ..strokeWidth = strokeWidth;
-    for (var i = 0; i < points.length - 1; i++) {
-      if (points[i] != null && points[i + 1] != null) {
-        c.drawLine(points[i]!, points[i + 1]!, paint);
+
+    List<Offset?> pts =
+        normPts.map((p) {
+          if (p == null) return null;
+          return Offset(p.dx * size.width, p.dy * size.height);
+        }).toList();
+
+    for (var i = 0; i < pts.length - 1; i++) {
+      if (pts[i] != null && pts[i + 1] != null) {
+        canvas.drawLine(pts[i]!, pts[i + 1]!, paint);
       }
     }
   }
 
   @override
-  bool shouldRepaint(_) => true;
+  bool shouldRepaint(covariant _ScaledPainter old) => true;
 }
 
 abstract class _Effect {
