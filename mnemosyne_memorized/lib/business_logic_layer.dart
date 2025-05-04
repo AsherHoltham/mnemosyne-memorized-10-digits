@@ -104,14 +104,14 @@ class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
       emit(state.drawing(hasDrawn: false));
     });
 
-    on<StartAnimationEvent>((event, emit) {
+    on<StartAnimationEvent>((event, emit) async {
       emit(
         state.setAnimationData(
           startAnimation: true,
           painterData: event.newPoints,
         ),
       );
-      // wait a set amount of time;
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 200));
       emit(state.animate());
     });
   }

@@ -9,6 +9,33 @@ const List<Color> networkGraphColors = [
   Color(0xFF8A2BE2), // Blue Violet L5 on gradient from transparrent to this
 ];
 
+class PredictionAnimator extends StatelessWidget {
+  final double width;
+  final double height;
+  final List<Offset?> inputPoints;
+  final double time = 0.0;
+
+  const PredictionAnimator({
+    super.key,
+    required this.width,
+    required this.height,
+    required this.inputPoints,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      color: Colors.white,
+      child: CustomPaint(
+        size: Size(width, height),
+        painter: _ScaledPainter(inputPoints, width / 28.0),
+      ),
+    );
+  }
+}
+
 class DrawingPad extends StatefulWidget {
   final double width;
   final double height;
