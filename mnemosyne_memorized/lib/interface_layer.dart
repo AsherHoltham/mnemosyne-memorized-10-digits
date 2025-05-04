@@ -52,9 +52,11 @@ class DrawingPadState extends State<DrawingPad> {
           if (!_canDraw) return;
           setState(() => _normPoints.add(null));
         },
-        child: CustomPaint(
-          size: Size(widget.width, widget.height),
-          painter: _ScaledPainter(_normPoints, widget.width / 28.0),
+        child: ClipRect(
+          child: CustomPaint(
+            size: Size(widget.width, widget.height),
+            painter: _ScaledPainter(_normPoints, widget.width / 28.0),
+          ),
         ),
       ),
     );

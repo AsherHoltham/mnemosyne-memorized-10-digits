@@ -33,7 +33,8 @@ class Model {
 }
 
 class MnemosyneData {
-  final List<List<double>> latestActivations = [];
+  final List<double> inputs;
+  final List<List<double>> latestActivations;
   late final Model mnemosyneBrain;
 
   Future<void> getTrainedModelData() async {
@@ -41,6 +42,10 @@ class MnemosyneData {
     final modelArray = jsonDecode(modelStr) as List<dynamic>;
     mnemosyneBrain = Model.fromJsonArray(modelArray);
   }
+
+  MnemosyneData({List<double>? inputs, List<List<double>>? latestActivations})
+    : inputs = inputs ?? [],
+      latestActivations = latestActivations ?? [];
 }
 
 abstract class MnemosyneDataEvent {
@@ -48,7 +53,8 @@ abstract class MnemosyneDataEvent {
 }
 
 class UpdateInputData extends MnemosyneDataEvent {
-  const UpdateInputData();
+  final List<double> newInputs;
+  const UpdateInputData(this.newInputs);
 }
 
 class UpdateActivations extends MnemosyneDataEvent {
