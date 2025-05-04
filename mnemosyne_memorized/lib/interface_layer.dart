@@ -33,6 +33,8 @@ class DrawingPadState extends State<DrawingPad> {
 
   void clear() => setState(() => _normPoints.clear());
 
+  List<Offset?> get normalizedPoints => List.unmodifiable(_normPoints);
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(

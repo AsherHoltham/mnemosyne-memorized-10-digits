@@ -44,6 +44,7 @@ class Mnemosyne {
   final DeltaTime delta = DeltaTime.instance;
   final bool hasDrawn;
   final bool startAnimation;
+  //List<Offset?> painterData;
 
   Mnemosyne({this.hasDrawn = false, this.startAnimation = false});
 

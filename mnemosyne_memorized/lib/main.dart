@@ -56,73 +56,80 @@ class RootPage extends StatelessWidget {
             return Scaffold(
               backgroundColor: Color.fromARGB(255, 42, 42, 42),
               body: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                child: Stack(
                   children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Text("Draw a Digit Below", style: planeTextStyle)
-                            .animate(
-                              !mnemo.hasDrawn && !mnemo.startAnimation,
-                              duration: Duration(milliseconds: 200),
-                            )
-                            .fade()
-                            .slide(from: const Offset(0, .2)),
-                        MyButton(
-                              scale: buttonScale,
-                              childStyle: buttonTextStyle,
-                              child: const Text("Reset Drawing"),
-                              onPressed: () {
+                    if (!mnemo.startAnimation)
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Text("Draw a Digit Below", style: planeTextStyle)
+                                  .animate(
+                                    !mnemo.hasDrawn && !mnemo.startAnimation,
+                                    duration: Duration(milliseconds: 200),
+                                  )
+                                  .fade()
+                                  .slide(from: const Offset(0, .2)),
+                              MyButton(
+                                    scale: buttonScale,
+                                    childStyle: buttonTextStyle,
+                                    child: const Text("Reset Drawing"),
+                                    onPressed: () {
+                                      context.read<MnemosyneRootStream>().add(
+                                        const UndoDrawEvent(),
+                                      );
+                                      padKey.currentState?.clear();
+                                    },
+                                  )
+                                  .animate(
+                                    mnemo.hasDrawn && !mnemo.startAnimation,
+                                  )
+                                  .fade()
+                                  .slide(from: const Offset(0, .2)),
+                            ],
+                          ),
+                          SizedBox(height: spacing),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onPanDown: (_) {
+                              if (!mnemo.startAnimation) {
                                 context.read<MnemosyneRootStream>().add(
-                                  const UndoDrawEvent(),
+                                  const DrawEvent(),
                                 );
-                                padKey.currentState?.clear();
-                              },
-                            )
-                            .animate(mnemo.hasDrawn && !mnemo.startAnimation)
-                            .fade()
-                            .slide(from: const Offset(0, .2)),
-                      ],
-                    ),
-                    SizedBox(height: spacing),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onPanDown: (_) {
-                        if (!mnemo.startAnimation) {
-                          context.read<MnemosyneRootStream>().add(
-                            const DrawEvent(),
-                          );
-                        }
-                      },
-                      child: Container(
-                        width: padDim,
-                        height: padDim,
-                        color: Colors.white,
-                        child: DrawingPad(
-                          key: padKey,
-                          width: padDim,
-                          height: padDim,
-                          enableDrawing: !mnemo.startAnimation,
-                        ),
+                              }
+                            },
+                            child: Container(
+                              width: padDim,
+                              height: padDim,
+                              color: Colors.white,
+                              child: DrawingPad(
+                                key: padKey,
+                                width: padDim,
+                                height: padDim,
+                                enableDrawing: !mnemo.startAnimation,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: spacing),
+                          MyButton(
+                                scale: buttonScale,
+                                childStyle: buttonTextStyle,
+                                child: Text("Show Mnemosyne"),
+                                onPressed:
+                                    () => {
+                                      context.read<MnemosyneRootStream>().add(
+                                        const AnimationEvent(),
+                                      ),
+                                    },
+                              )
+                              .animate(mnemo.hasDrawn && !mnemo.startAnimation)
+                              .fade()
+                              .slide(from: Offset(0, .2)),
+                        ],
                       ),
-                    ),
-                    SizedBox(height: spacing),
-                    MyButton(
-                          scale: buttonScale,
-                          childStyle: buttonTextStyle,
-                          child: Text("Show Mnemosyne"),
-                          onPressed:
-                              () => {
-                                context.read<MnemosyneRootStream>().add(
-                                  const AnimationEvent(),
-                                ),
-                              },
-                        )
-                        .animate(mnemo.hasDrawn && !mnemo.startAnimation)
-                        .fade()
-                        .slide(from: Offset(0, .2)),
                   ],
                 ),
               ),

@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_bloc/flutter_bloc.dart';
-//import 'dart:math' as math;
+import 'dart:math' as math;
 import 'dart:convert';
 
 class Model {
@@ -29,6 +29,38 @@ class Model {
         }).toList();
 
     return Model(modelWeights: weights, modelBiases: biases);
+  }
+
+  List<List<double>> predict(List<double> input) {
+    var activations = <List<double>>[];
+    var a = input;
+    activations.add(a);
+
+    for (var layer = 0; layer < modelWeights.length; layer++) {
+      final weights = modelWeights[layer];
+      final biases = modelBiases[layer];
+      final outLen = biases.length;
+      final z = List<double>.filled(outLen, 0.0);
+      for (var j = 0; j < outLen; j++) {
+        var sum = biases[j];
+        for (var i = 0; i < a.length; i++) {
+          sum += a[i] * weights[i][j];
+        }
+        z[j] = sum;
+      }
+
+      if (layer < modelWeights.length - 1) {
+        a = z.map((v) => v > 0 ? v.toDouble() : 0.0).toList();
+      } else {
+        final maxZ = z.reduce(math.max);
+        final expZ = z.map((v) => math.exp(v - maxZ)).toList();
+        final sumExp = expZ.reduce((p, c) => p + c);
+        a = expZ.map((v) => v / sumExp).toList();
+      }
+      activations.add(a);
+    }
+
+    return activations;
   }
 }
 
@@ -63,7 +95,39 @@ class UpdateActivations extends MnemosyneDataEvent {
 
 class MnemosyneDataStream extends Bloc<MnemosyneDataEvent, MnemosyneData> {
   MnemosyneDataStream() : super(MnemosyneData()) {
-    on<UpdateInputData>((event, emit) {});
-    on<UpdateActivations>((event, emit) {});
+    _initialize();
+    on<UpdateInputData>(_onUpdateInputData);
+    on<UpdateActivations>(_onUpdateActivations);
+  }
+
+  Future<void> _initialize() async {
+    await state.getTrainedModelData();
+    add(const UpdateActivations());
+  }
+
+  Future<void> _onUpdateInputData(
+    UpdateInputData event,
+    Emitter<MnemosyneData> emit,
+  ) async {
+    final newState = MnemosyneData(
+      inputs: event.newInputs,
+      latestActivations: state.latestActivations,
+    )..mnemosyneBrain = state.mnemosyneBrain;
+
+    emit(newState);
+  }
+
+  void _onUpdateActivations(
+    UpdateActivations event,
+    Emitter<MnemosyneData> emit,
+  ) {
+    final activations = state.mnemosyneBrain.predict(state.inputs);
+
+    final newState = MnemosyneData(
+      inputs: state.inputs,
+      latestActivations: activations,
+    )..mnemosyneBrain = state.mnemosyneBrain;
+
+    emit(newState);
   }
 }
