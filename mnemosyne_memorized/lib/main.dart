@@ -61,7 +61,6 @@ class RootPage extends StatelessWidget {
 
         return BlocBuilder<MnemosyneRootStream, Mnemosyne>(
           builder: (context, mnemo) {
-            //final dtMs = mnemo.delta.deltaTime.inMicroseconds;
             return BlocBuilder<MnemosyneDataStream, MnemosyneData>(
               builder: (context, mnemoData) {
                 return InterfaceLayer(
@@ -120,9 +119,12 @@ class InterfaceLayer extends StatelessWidget {
           children: [
             if (mnemo.animationReady)
               PredictionAnimator(
+                screenWidth: width,
+                screenHeight: height,
                 padWidth: padDim,
                 padHeight: padDim,
                 inputPoints: mnemo.painterData,
+                deltaTime: mnemo.delta.deltaTime.inMilliseconds.toDouble(),
               ),
             if (!mnemo.animationReady)
               Column(

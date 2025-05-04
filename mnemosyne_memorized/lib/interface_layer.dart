@@ -10,28 +10,28 @@ const List<Color> networkGraphColors = [
 ];
 
 class PredictionAnimator extends StatelessWidget {
+  final double screenWidth;
+  final double screenHeight;
   final double padWidth;
   final double padHeight;
   final List<Offset?> inputPoints;
-  final double time = 0.0;
+  final double deltaTime;
 
   const PredictionAnimator({
     super.key,
+    required this.screenWidth,
+    required this.screenHeight,
     required this.padWidth,
     required this.padHeight,
     required this.inputPoints,
+    required this.deltaTime,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: padWidth,
-      height: padHeight,
-      color: Colors.white,
-      child: CustomPaint(
-        size: Size(padWidth, padHeight),
-        painter: _AnimationInitPainter(inputPoints, padWidth / 28.0),
-      ),
+    return CustomPaint(
+      size: Size(padWidth, padHeight),
+      painter: _AnimationInitPainter(inputPoints, padWidth / 28.0),
     );
   }
 }
@@ -39,21 +39,28 @@ class PredictionAnimator extends StatelessWidget {
 class _AnimationInitPainter extends CustomPainter {
   final List<Offset?> normPts;
   final double strokeWidth;
+
   _AnimationInitPainter(this.normPts, this.strokeWidth);
 
   @override
   void paint(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.white);
+
     final paint =
         Paint()
           ..color = Colors.black
           ..strokeCap = StrokeCap.round
           ..strokeWidth = strokeWidth;
 
-    List<Offset?> pts =
-        normPts.map((p) {
-          if (p == null) return null;
-          return Offset(p.dx * size.width, p.dy * size.height);
-        }).toList();
+    final pts =
+        normPts
+            .map(
+              (p) =>
+                  p == null
+                      ? null
+                      : Offset(p.dx * size.width, p.dy * size.height),
+            )
+            .toList();
 
     for (var i = 0; i < pts.length - 1; i++) {
       if (pts[i] != null && pts[i + 1] != null) {
@@ -63,7 +70,7 @@ class _AnimationInitPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ScaledPainter old) => true;
+  bool shouldRepaint(covariant _AnimationInitPainter old) => true;
 }
 
 class DrawingPad extends StatefulWidget {
@@ -101,11 +108,17 @@ class DrawingPadState extends State<DrawingPad> {
         onPanUpdate: (d) {
           if (!_canDraw) return;
           final local = d.localPosition;
-          setState(() {
-            _normPoints.add(
-              Offset(local.dx / widget.width, local.dy / widget.height),
-            );
-          });
+
+          if (local.dx >= 0 &&
+              local.dx <= widget.width &&
+              local.dy >= 0 &&
+              local.dy <= widget.height) {
+            setState(() {
+              _normPoints.add(
+                Offset(local.dx / widget.width, local.dy / widget.height),
+              );
+            });
+          }
         },
         onPanEnd: (_) {
           if (!_canDraw) return;
