@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 const List<Color> networkGraphColors = [
   //way of depicting geyscale // input on gradient from white to this
@@ -9,7 +12,7 @@ const List<Color> networkGraphColors = [
   Color(0xFF8A2BE2), // Blue Violet L5 on gradient from transparrent to this
 ];
 
-class PredictionAnimator extends StatelessWidget {
+class PredictionAnimator extends StatefulWidget {
   final double screenWidth;
   final double screenHeight;
   final double padWidth;
@@ -26,12 +29,43 @@ class PredictionAnimator extends StatelessWidget {
     required this.inputPoints,
     required this.deltaTime,
   });
+  @override
+  // ignore: library_private_types_in_public_api
+  _PredictionAnimatorState createState() => _PredictionAnimatorState();
+}
+
+class _PredictionAnimatorState extends State<PredictionAnimator> {
+  final GlobalKey _boundaryKey = GlobalKey();
+  List<int>? _grid28;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _exportGrid());
+  }
+
+  Future<void> _exportGrid() async {
+    final grid = await GridExporter.exportTo28x28(_boundaryKey);
+    setState(() => _grid28 = grid);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(padWidth, padHeight),
-      painter: _AnimationInitPainter(inputPoints, padWidth / 28.0),
+    return RepaintBoundary(
+      key: _boundaryKey,
+      child:
+          _grid28 == null
+              ? CustomPaint(
+                size: Size(widget.padWidth, widget.padHeight),
+                painter: _AnimationInitPainter(
+                  widget.inputPoints,
+                  widget.padWidth / 28,
+                ),
+              )
+              : GreyscaleGrid(
+                values: _grid28!,
+                tileSize: widget.padWidth / 28,
+              ).animate(true).fade(),
     );
   }
 }
@@ -318,6 +352,85 @@ class MyButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class GridExporter {
+  static Future<List<int>> exportTo28x28(GlobalKey boundaryKey) async {
+    final boundary =
+        boundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    final ui.Image image = await boundary.toImage(pixelRatio: 1.0);
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
+    final Uint8List pixels = byteData!.buffer.asUint8List();
+
+    final width = image.width;
+    final height = image.height;
+
+    const int N = 28;
+    final tileW = (width / N).floor();
+    final tileH = (height / N).floor();
+
+    final List<int> result = List.filled(N * N, 0);
+
+    for (var row = 0; row < N; row++) {
+      for (var col = 0; col < N; col++) {
+        int sum = 0;
+        int count = 0;
+
+        final xStart = col * tileW;
+        final yStart = row * tileH;
+
+        for (var y = yStart; y < yStart + tileH; y++) {
+          for (var x = xStart; x < xStart + tileW; x++) {
+            final idx = (y * width + x) * 4;
+            final r = pixels[idx];
+            final g = pixels[idx + 1];
+            final b = pixels[idx + 2];
+            sum += ((r + g + b) ~/ 3);
+            count++;
+          }
+        }
+        result[row * N + col] = (sum ~/ count).clamp(0, 255);
+      }
+    }
+
+    return result;
+  }
+}
+
+class GreyscaleGrid extends StatelessWidget {
+  final List<int> values;
+  final double tileSize;
+
+  const GreyscaleGrid({super.key, required this.values, required this.tileSize})
+    : assert(values.length == 28 * 28);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: tileSize * 28,
+      height: tileSize * 28,
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 28,
+          childAspectRatio: 1.0,
+          mainAxisSpacing: 0,
+          crossAxisSpacing: 0,
+        ),
+        itemCount: values.length,
+        itemBuilder: (context, index) {
+          final gray = values[index].clamp(0, 255);
+          return Container(
+            width: tileSize,
+            height: tileSize,
+            color: Color.fromARGB(255, gray, gray, gray),
+          );
+        },
       ),
     );
   }

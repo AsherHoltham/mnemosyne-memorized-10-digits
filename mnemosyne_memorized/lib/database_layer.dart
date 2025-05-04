@@ -69,7 +69,7 @@ class Model {
       }
       activations.add(a);
     }
-
+    print(activations);
     return activations;
   }
 }
