@@ -36,24 +36,51 @@ class UndoDrawEvent extends MnemosyneEvent {
   const UndoDrawEvent();
 }
 
-class AnimationEvent extends MnemosyneEvent {
-  const AnimationEvent();
+class StartAnimationEvent extends MnemosyneEvent {
+  final List<Offset?> newPoints;
+  StartAnimationEvent(this.newPoints);
 }
 
 class Mnemosyne {
   final DeltaTime delta = DeltaTime.instance;
   final bool hasDrawn;
   final bool startAnimation;
-  //List<Offset?> painterData;
+  final List<Offset?> painterData;
+  final bool animationReady;
 
-  Mnemosyne({this.hasDrawn = false, this.startAnimation = false});
+  Mnemosyne({
+    this.hasDrawn = false,
+    this.startAnimation = false,
+    List<Offset?>? painterData,
+    this.animationReady = false,
+  }) : painterData = painterData ?? [];
 
   Mnemosyne drawing({bool? hasDrawn}) {
-    return Mnemosyne(hasDrawn: hasDrawn ?? this.hasDrawn);
+    return Mnemosyne(
+      hasDrawn: hasDrawn ?? this.hasDrawn,
+      startAnimation: startAnimation,
+      painterData: painterData,
+    );
   }
 
-  Mnemosyne animating({bool? startAnimation}) {
-    return Mnemosyne(startAnimation: startAnimation ?? this.startAnimation);
+  Mnemosyne setAnimationData({
+    bool? startAnimation,
+    List<Offset?>? painterData,
+  }) {
+    return Mnemosyne(
+      hasDrawn: hasDrawn,
+      startAnimation: startAnimation ?? this.startAnimation,
+      painterData: painterData ?? this.painterData,
+    );
+  }
+
+  Mnemosyne animate() {
+    return Mnemosyne(
+      hasDrawn: hasDrawn,
+      startAnimation: startAnimation,
+      painterData: painterData,
+      animationReady: true,
+    );
   }
 
   void outPut() {
@@ -77,8 +104,15 @@ class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
       emit(state.drawing(hasDrawn: false));
     });
 
-    on<AnimationEvent>((event, emit) {
-      emit(state.animating(startAnimation: true));
+    on<StartAnimationEvent>((event, emit) {
+      emit(
+        state.setAnimationData(
+          startAnimation: true,
+          painterData: event.newPoints,
+        ),
+      );
+      // wait a set amount of time;
+      emit(state.animate());
     });
   }
 
