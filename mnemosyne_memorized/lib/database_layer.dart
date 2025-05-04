@@ -6,28 +6,38 @@ import 'dart:convert';
 class Model {
   final List<List<List<double>>> modelWeights;
   final List<List<double>> modelBiases;
+
   Model({required this.modelWeights, required this.modelBiases});
 
-  factory Model.fromJsonArray(List<dynamic> jsonArray) {
-    final layerCount = jsonArray.length ~/ 2;
-    final weightJson = jsonArray.sublist(0, layerCount);
-    final biasJson = jsonArray.sublist(layerCount);
+  factory Model.fromJsonMap(Map<String, dynamic> json) {
+    final weightKeys =
+        json.keys.where((k) => k.endsWith('_weights')).toList()..sort((a, b) {
+          final ai = int.parse(a.split('_')[1]);
+          final bi = int.parse(b.split('_')[1]);
+          return ai.compareTo(bi);
+        });
+    final biasKeys =
+        json.keys.where((k) => k.endsWith('_biases')).toList()..sort((a, b) {
+          final ai = int.parse(a.split('_')[1]);
+          final bi = int.parse(b.split('_')[1]);
+          return ai.compareTo(bi);
+        });
 
     final weights =
-        weightJson.map<List<List<double>>>((layer) {
-          final rows = layer as List;
-          return rows.map<List<double>>((r) {
-            return (r as List)
+        weightKeys.map<List<List<double>>>((key) {
+          final rawLayer = json[key] as List;
+          return rawLayer.map<List<double>>((row) {
+            return (row as List)
                 .map<double>((e) => (e as num).toDouble())
                 .toList();
           }).toList();
         }).toList();
 
     final biases =
-        biasJson.map<List<double>>((b) {
-          return (b as List).map<double>((e) => (e as num).toDouble()).toList();
+        biasKeys.map<List<double>>((key) {
+          final rawBias = json[key] as List;
+          return rawBias.map<double>((e) => (e as num).toDouble()).toList();
         }).toList();
-
     return Model(modelWeights: weights, modelBiases: biases);
   }
 
@@ -70,9 +80,9 @@ class MnemosyneData {
   late final Model mnemosyneBrain;
 
   Future<void> getTrainedModelData() async {
-    final modelStr = await rootBundle.loadString('assets/mnist_weights.json');
-    final modelArray = jsonDecode(modelStr) as List<dynamic>;
-    mnemosyneBrain = Model.fromJsonArray(modelArray);
+    final modelStr = await rootBundle.loadString('lib/data/mnist_weights.json');
+    final jsonRoot = jsonDecode(modelStr) as Map<String, dynamic>;
+    mnemosyneBrain = Model.fromJsonMap(jsonRoot);
   }
 
   MnemosyneData({List<double>? inputs, List<List<double>>? latestActivations})

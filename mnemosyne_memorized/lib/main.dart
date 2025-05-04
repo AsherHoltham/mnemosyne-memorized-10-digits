@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'interface_layer.dart';
 import 'business_logic_layer.dart';
+import 'database_layer.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-void main() async {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
-    BlocProvider(create: (_) => MnemosyneRootStream(), child: const Root()),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<MnemosyneRootStream>(create: (_) => MnemosyneRootStream()),
+        BlocProvider<MnemosyneDataStream>(create: (_) => MnemosyneDataStream()),
+      ],
+      child: const Root(),
+    ),
   );
 }
 
@@ -53,101 +62,142 @@ class RootPage extends StatelessWidget {
         return BlocBuilder<MnemosyneRootStream, Mnemosyne>(
           builder: (context, mnemo) {
             //final dtMs = mnemo.delta.deltaTime.inMicroseconds;
-            return Scaffold(
-              backgroundColor: Color.fromARGB(255, 42, 42, 42),
-              body: Center(
-                child: Stack(
-                  children: [
-                    if (mnemo.animationReady)
-                      PredictionAnimator(
-                        width: padDim,
-                        height: padDim,
-                        inputPoints: mnemo.painterData,
-                      ),
-                    if (!mnemo.animationReady)
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Text("Draw a Digit Below", style: planeTextStyle)
-                                  .animate(
-                                    !mnemo.hasDrawn && !mnemo.startAnimation,
-                                    duration: Duration(milliseconds: 200),
-                                  )
-                                  .fade()
-                                  .slide(from: const Offset(0, .2)),
-                              MyButton(
-                                    scale: buttonScale,
-                                    childStyle: buttonTextStyle,
-                                    child: const Text("Reset Drawing"),
-                                    onPressed: () {
-                                      context.read<MnemosyneRootStream>().add(
-                                        const UndoDrawEvent(),
-                                      );
-                                      padKey.currentState?.clear();
-                                    },
-                                  )
-                                  .animate(
-                                    mnemo.hasDrawn && !mnemo.startAnimation,
-                                  )
-                                  .fade()
-                                  .slide(from: const Offset(0, .2)),
-                            ],
-                          ),
-                          SizedBox(height: spacing),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onPanDown: (_) {
-                              if (!mnemo.startAnimation) {
-                                context.read<MnemosyneRootStream>().add(
-                                  const DrawEvent(),
-                                );
-                              }
-                            },
-                            child: Container(
-                              width: padDim,
-                              height: padDim,
-                              color: Colors.white,
-                              child: DrawingPad(
-                                key: padKey,
-                                width: padDim,
-                                height: padDim,
-                                enableDrawing: !mnemo.startAnimation,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: spacing),
-                          MyButton(
-                                scale: buttonScale,
-                                childStyle: buttonTextStyle,
-                                child: Text("Show Mnemosyne"),
-                                onPressed:
-                                    () => {
-                                      context.read<MnemosyneRootStream>().add(
-                                        StartAnimationEvent(
-                                          padKey
-                                                  .currentState
-                                                  ?.normalizedPoints ??
-                                              [],
-                                        ),
-                                      ),
-                                    },
-                              )
-                              .animate(mnemo.hasDrawn && !mnemo.startAnimation)
-                              .fade()
-                              .slide(from: Offset(0, .2)),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
+            return BlocBuilder<MnemosyneDataStream, MnemosyneData>(
+              builder: (context, mnemoData) {
+                return InterfaceLayer(
+                  width: screenWidth,
+                  height: screenHeight,
+                  padKey: padKey,
+                  mnemo: mnemo,
+                  mnemoData: mnemoData,
+                  padDim: padDim,
+                  spacing: spacing,
+                  buttonScale: buttonScale,
+                  planeTextStyle: planeTextStyle,
+                  buttonTextStyle: buttonTextStyle,
+                );
+              },
             );
           },
         );
       },
+    );
+  }
+}
+
+class InterfaceLayer extends StatelessWidget {
+  final double width;
+  final double height;
+  final GlobalKey<DrawingPadState> padKey;
+  final Mnemosyne mnemo;
+  final MnemosyneData mnemoData;
+  final double padDim;
+  final double spacing;
+  final double buttonScale;
+  final TextStyle planeTextStyle;
+  final TextStyle buttonTextStyle;
+
+  const InterfaceLayer({
+    required this.width,
+    required this.height,
+    super.key,
+    required this.padKey,
+    required this.mnemo,
+    required this.mnemoData,
+    required this.padDim,
+    required this.spacing,
+    required this.buttonScale,
+    required this.planeTextStyle,
+    required this.buttonTextStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 42, 42, 42),
+      body: Center(
+        child: Stack(
+          children: [
+            if (mnemo.animationReady)
+              PredictionAnimator(
+                padWidth: padDim,
+                padHeight: padDim,
+                inputPoints: mnemo.painterData,
+              ),
+            if (!mnemo.animationReady)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text("Draw a Digit Below", style: planeTextStyle)
+                          .animate(
+                            !mnemo.hasDrawn && !mnemo.startAnimation,
+                            duration: const Duration(milliseconds: 200),
+                          )
+                          .fade()
+                          .slide(from: const Offset(0, .2)),
+                      MyButton(
+                            scale: buttonScale,
+                            childStyle: buttonTextStyle,
+                            child: const Text("Reset Drawing"),
+                            onPressed: () {
+                              context.read<MnemosyneRootStream>().add(
+                                const UndoDrawEvent(),
+                              );
+                              padKey.currentState?.clear();
+                            },
+                          )
+                          .animate(mnemo.hasDrawn && !mnemo.startAnimation)
+                          .fade()
+                          .slide(from: const Offset(0, .2)),
+                    ],
+                  ),
+                  SizedBox(height: spacing),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanDown: (_) {
+                      if (!mnemo.startAnimation) {
+                        context.read<MnemosyneRootStream>().add(
+                          const DrawEvent(),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: padDim,
+                      height: padDim,
+                      color: Colors.white,
+                      child: DrawingPad(
+                        key: padKey,
+                        width: padDim,
+                        height: padDim,
+                        enableDrawing: !mnemo.startAnimation,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: spacing),
+                  MyButton(
+                        scale: buttonScale,
+                        childStyle: buttonTextStyle,
+                        child: const Text("Show Mnemosyne"),
+                        onPressed: () {
+                          context.read<MnemosyneRootStream>().add(
+                            StartAnimationEvent(
+                              padKey.currentState?.normalizedPoints ?? [],
+                            ),
+                          );
+                        },
+                      )
+                      .animate(mnemo.hasDrawn && !mnemo.startAnimation)
+                      .fade()
+                      .slide(from: const Offset(0, .2)),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

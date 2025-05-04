@@ -10,30 +10,60 @@ const List<Color> networkGraphColors = [
 ];
 
 class PredictionAnimator extends StatelessWidget {
-  final double width;
-  final double height;
+  final double padWidth;
+  final double padHeight;
   final List<Offset?> inputPoints;
   final double time = 0.0;
 
   const PredictionAnimator({
     super.key,
-    required this.width,
-    required this.height,
+    required this.padWidth,
+    required this.padHeight,
     required this.inputPoints,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: height,
+      width: padWidth,
+      height: padHeight,
       color: Colors.white,
       child: CustomPaint(
-        size: Size(width, height),
-        painter: _ScaledPainter(inputPoints, width / 28.0),
+        size: Size(padWidth, padHeight),
+        painter: _AnimationInitPainter(inputPoints, padWidth / 28.0),
       ),
     );
   }
+}
+
+class _AnimationInitPainter extends CustomPainter {
+  final List<Offset?> normPts;
+  final double strokeWidth;
+  _AnimationInitPainter(this.normPts, this.strokeWidth);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..color = Colors.black
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = strokeWidth;
+
+    List<Offset?> pts =
+        normPts.map((p) {
+          if (p == null) return null;
+          return Offset(p.dx * size.width, p.dy * size.height);
+        }).toList();
+
+    for (var i = 0; i < pts.length - 1; i++) {
+      if (pts[i] != null && pts[i + 1] != null) {
+        canvas.drawLine(pts[i]!, pts[i + 1]!, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScaledPainter old) => true;
 }
 
 class DrawingPad extends StatefulWidget {
