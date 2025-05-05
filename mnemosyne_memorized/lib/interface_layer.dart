@@ -56,9 +56,6 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
   Future<void> _exportGrid() async {
     final grid = await GridExporter.exportTo28x28(_boundaryKey);
     final inputs = grid.map((i) => i.toDouble()).toList();
-    // print("HERE INPUTS START");
-    // print(inputs);
-    // print("HERE INPUTS END");
     _dataBloc.add(UpdateInputData(inputs));
     _dataBloc.add(UpdateActivations());
     setState(() => _grid28 = grid);
@@ -121,6 +118,116 @@ class _AnimationInitPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _AnimationInitPainter old) => true;
 }
+
+class GridExporter {
+  static Future<List<int>> exportTo28x28(GlobalKey boundaryKey) async {
+    final boundary =
+        boundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    final ui.Image image = await boundary.toImage(pixelRatio: 1.0);
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
+    final Uint8List pixels = byteData!.buffer.asUint8List();
+
+    final width = image.width;
+    final height = image.height;
+
+    const int N = 28;
+    final tileW = (width / N).floor();
+    final tileH = (height / N).floor();
+
+    final List<int> result = List.filled(N * N, 0);
+
+    for (var row = 0; row < N; row++) {
+      for (var col = 0; col < N; col++) {
+        int sum = 0;
+        int count = 0;
+
+        final xStart = col * tileW;
+        final yStart = row * tileH;
+
+        for (var y = yStart; y < yStart + tileH; y++) {
+          for (var x = xStart; x < xStart + tileW; x++) {
+            final idx = (y * width + x) * 4;
+            final r = pixels[idx];
+            final g = pixels[idx + 1];
+            final b = pixels[idx + 2];
+            sum += ((r + g + b) ~/ 3);
+            count++;
+          }
+        }
+        result[row * N + col] = (sum ~/ count).clamp(0, 255);
+      }
+    }
+
+    return result;
+  }
+}
+
+class GreyscaleGrid extends StatelessWidget {
+  final List<int> values;
+  final double tileSize;
+
+  const GreyscaleGrid({super.key, required this.values, required this.tileSize})
+    : assert(values.length == 28 * 28);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: tileSize * 28,
+      height: tileSize * 28,
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 28,
+          childAspectRatio: 1.0,
+          mainAxisSpacing: 0,
+          crossAxisSpacing: 0,
+        ),
+        itemCount: values.length,
+        itemBuilder: (context, index) {
+          final gray = values[index].clamp(0, 255);
+          return Container(
+            width: tileSize,
+            height: tileSize,
+            color: Color.fromARGB(255, gray, gray, gray),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class GreyScaleInputTile extends StatelessWidget {
+  final double percentToEndPos;
+  final double scale;
+  final double xPos;
+  final double yPos;
+  final int greyIndex;
+
+  const GreyScaleInputTile({
+    super.key,
+    required this.percentToEndPos,
+    required this.scale,
+    required this.xPos,
+    required this.yPos,
+    required this.greyIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      borderRadius: BorderRadius.circular(percentToEndPos * scale),
+      color: Color.fromARGB(255, greyIndex, greyIndex, greyIndex),
+      child: SizedBox(height: scale, width: scale),
+    );
+  }
+}
+
+// PRE ANIMATION WIDGETS //
+// PRE ANIMATION WIDGETS //
+// PRE ANIMATION WIDGETS //
+// PRE ANIMATION WIDGETS //
 
 class DrawingPad extends StatefulWidget {
   final double width;
@@ -368,111 +475,6 @@ class MyButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class GridExporter {
-  static Future<List<int>> exportTo28x28(GlobalKey boundaryKey) async {
-    final boundary =
-        boundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    final ui.Image image = await boundary.toImage(pixelRatio: 1.0);
-    final ByteData? byteData = await image.toByteData(
-      format: ui.ImageByteFormat.rawRgba,
-    );
-    final Uint8List pixels = byteData!.buffer.asUint8List();
-
-    final width = image.width;
-    final height = image.height;
-
-    const int N = 28;
-    final tileW = (width / N).floor();
-    final tileH = (height / N).floor();
-
-    final List<int> result = List.filled(N * N, 0);
-
-    for (var row = 0; row < N; row++) {
-      for (var col = 0; col < N; col++) {
-        int sum = 0;
-        int count = 0;
-
-        final xStart = col * tileW;
-        final yStart = row * tileH;
-
-        for (var y = yStart; y < yStart + tileH; y++) {
-          for (var x = xStart; x < xStart + tileW; x++) {
-            final idx = (y * width + x) * 4;
-            final r = pixels[idx];
-            final g = pixels[idx + 1];
-            final b = pixels[idx + 2];
-            sum += ((r + g + b) ~/ 3);
-            count++;
-          }
-        }
-        result[row * N + col] = (sum ~/ count).clamp(0, 255);
-      }
-    }
-
-    return result;
-  }
-}
-
-class GreyscaleGrid extends StatelessWidget {
-  final List<int> values;
-  final double tileSize;
-
-  const GreyscaleGrid({super.key, required this.values, required this.tileSize})
-    : assert(values.length == 28 * 28);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: tileSize * 28,
-      height: tileSize * 28,
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 28,
-          childAspectRatio: 1.0,
-          mainAxisSpacing: 0,
-          crossAxisSpacing: 0,
-        ),
-        itemCount: values.length,
-        itemBuilder: (context, index) {
-          final gray = values[index].clamp(0, 255);
-          return Container(
-            width: tileSize,
-            height: tileSize,
-            color: Color.fromARGB(255, gray, gray, gray),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class GreyScaleInputTile extends StatelessWidget {
-  final double percentToEndPos;
-  final double scale;
-  final double xPos;
-  final double yPos;
-  final int greyIndex;
-
-  const GreyScaleInputTile({
-    super.key,
-    required this.percentToEndPos,
-    required this.scale,
-    required this.xPos,
-    required this.yPos,
-    required this.greyIndex,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      borderRadius: BorderRadius.circular(percentToEndPos * scale),
-      color: Color.fromARGB(255, greyIndex, greyIndex, greyIndex),
-      child: SizedBox(height: scale, width: scale),
     );
   }
 }

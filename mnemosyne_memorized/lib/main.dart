@@ -120,13 +120,47 @@ class InterfaceLayer extends StatelessWidget {
         child: Stack(
           children: [
             if (mnemo.animationReady)
-              PredictionAnimator(
-                screenWidth: width,
-                screenHeight: height,
-                padWidth: padDim,
-                padHeight: padDim,
-                inputPoints: mnemo.painterData,
-                deltaTime: mnemo.delta.deltaTime.inMilliseconds.toDouble(),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text(
+                            "Mnemosyne sees a ${mnemoData.prediction}",
+                            style: planeTextStyle,
+                          )
+                          .animate(mnemoData.showEndUI)
+                          .fade()
+                          .slide(from: const Offset(0, .2)),
+                    ],
+                  ),
+                  SizedBox(height: spacing),
+                  PredictionAnimator(
+                    screenWidth: width,
+                    screenHeight: height,
+                    padWidth: padDim,
+                    padHeight: padDim,
+                    inputPoints: mnemo.painterData,
+                    deltaTime: mnemo.delta.deltaTime.inMilliseconds.toDouble(),
+                  ),
+                  SizedBox(height: spacing),
+                  MyButton(
+                        scale: buttonScale,
+                        childStyle: buttonTextStyle,
+                        child: const Text("Draw again"),
+                        onPressed: () {
+                          context.read<MnemosyneRootStream>().add(
+                            const ResetEvent(),
+                          );
+                          padKey.currentState?.clear();
+                        },
+                      )
+                      .animate(mnemoData.showEndUI)
+                      .fade()
+                      .slide(from: const Offset(0, .2)),
+                ],
               ),
             if (!mnemo.animationReady)
               Column(

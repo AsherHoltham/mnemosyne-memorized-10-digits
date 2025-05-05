@@ -41,6 +41,10 @@ class StartAnimationEvent extends MnemosyneEvent {
   StartAnimationEvent(this.newPoints);
 }
 
+class ResetEvent extends MnemosyneEvent {
+  const ResetEvent();
+}
+
 class Mnemosyne {
   final DeltaTime delta = DeltaTime.instance;
   final bool hasDrawn;
@@ -113,6 +117,10 @@ class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
       );
       await Future.delayed(const Duration(seconds: 1, milliseconds: 200));
       emit(state.animate());
+    });
+
+    on<ResetEvent>((event, emit) {
+      emit(Mnemosyne());
     });
   }
 

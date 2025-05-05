@@ -40,7 +40,6 @@ class Model {
       }
       activations.add(a);
     }
-    //print(activations);
     return activations;
   }
 
@@ -73,15 +72,7 @@ class Model {
           final rawBias = json[key] as List;
           return rawBias.map<double>((e) => (e as num).toDouble()).toList();
         }).toList();
-    // print('Weight keys: $weightKeys');
-    // print('Bias   keys: $biasKeys');
-    // for (var l = 0; l < weights.length; l++) {
-    //   final w = weights[l];
-    //   print(
-    //     'Layer $l  weights: ${w.length} rows × ${w[0].length} cols; '
-    //     'biases: ${biases[l].length}',
-    //   );
-    // }
+
     return Model(modelWeights: weights, modelBiases: biases);
   }
 }
@@ -90,22 +81,30 @@ class MnemosyneData {
   final List<double> inputs;
   final List<List<double>> latestActivations;
   final Model mnemosyneBrain;
+  final int prediction;
+  final bool showEndUI;
 
   const MnemosyneData({
     this.inputs = const [],
     this.latestActivations = const [],
     required this.mnemosyneBrain,
+    this.prediction = 0,
+    this.showEndUI = false,
   });
 
   MnemosyneData copyWith({
     List<double>? inputs,
     List<List<double>>? latestActivations,
     Model? mnemosyneBrain,
+    int? prediction,
+    bool? showEndUI,
   }) {
     return MnemosyneData(
       inputs: inputs ?? this.inputs,
       latestActivations: latestActivations ?? this.latestActivations,
       mnemosyneBrain: mnemosyneBrain ?? this.mnemosyneBrain,
+      prediction: prediction ?? this.prediction,
+      showEndUI: showEndUI ?? this.showEndUI,
     );
   }
 }
@@ -155,6 +154,15 @@ class MnemosyneDataStream extends Bloc<MnemosyneDataEvent, MnemosyneData> {
   ) {
     final normalized = state.inputs.map((px) => 1.0 - (px / 255.0)).toList();
     final acts = state.mnemosyneBrain.predict(normalized);
-    emit(state.copyWith(latestActivations: acts));
+
+    int prediction = 0;
+    double currMax = 0.0;
+    for (int i = 0; i < acts[4].length; i++) {
+      if (acts[4][i] > currMax) {
+        currMax = acts[4][i];
+        prediction = i;
+      }
+    }
+    emit(state.copyWith(latestActivations: acts, prediction: prediction));
   }
 }
