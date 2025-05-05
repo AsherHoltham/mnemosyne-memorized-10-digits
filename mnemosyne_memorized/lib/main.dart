@@ -7,12 +7,14 @@ import 'database_layer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final rootBloc = MnemosyneRootStream();
+  final dataBloc = MnemosyneDataStream();
 
   runApp(
     MultiBlocProvider(
       providers: [
-        BlocProvider<MnemosyneRootStream>(create: (_) => MnemosyneRootStream()),
-        BlocProvider<MnemosyneDataStream>(create: (_) => MnemosyneDataStream()),
+        BlocProvider.value(value: rootBloc),
+        BlocProvider.value(value: dataBloc),
       ],
       child: const Root(),
     ),

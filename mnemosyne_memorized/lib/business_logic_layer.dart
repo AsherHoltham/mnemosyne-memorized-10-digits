@@ -84,7 +84,7 @@ class Mnemosyne {
   }
 
   void outPut() {
-    print('Δt: ${delta.deltaTime.inMicroseconds} μs');
+    //print('Δt: ${delta.deltaTime.inMicroseconds} μs');
   }
 }
 

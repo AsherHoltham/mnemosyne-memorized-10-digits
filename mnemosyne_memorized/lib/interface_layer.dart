@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'database_layer.dart';
 
 const List<Color> networkGraphColors = [
   //way of depicting geyscale // input on gradient from white to this
@@ -36,7 +38,14 @@ class PredictionAnimator extends StatefulWidget {
 
 class _PredictionAnimatorState extends State<PredictionAnimator> {
   final GlobalKey _boundaryKey = GlobalKey();
+  late final MnemosyneDataStream _dataBloc;
   List<int>? _grid28;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _dataBloc = context.read<MnemosyneDataStream>();
+  }
 
   @override
   void initState() {
@@ -46,6 +55,12 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
 
   Future<void> _exportGrid() async {
     final grid = await GridExporter.exportTo28x28(_boundaryKey);
+    final inputs = grid.map((i) => i.toDouble()).toList();
+    // print("HERE INPUTS START");
+    // print(inputs);
+    // print("HERE INPUTS END");
+    _dataBloc.add(UpdateInputData(inputs));
+    _dataBloc.add(UpdateActivations());
     setState(() => _grid28 = grid);
   }
 
