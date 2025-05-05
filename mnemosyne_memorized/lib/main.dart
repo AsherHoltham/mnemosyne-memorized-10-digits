@@ -131,7 +131,7 @@ class InterfaceLayer extends StatelessWidget {
                             "Mnemosyne sees a ${mnemoData.prediction}",
                             style: planeTextStyle,
                           )
-                          .animate(mnemoData.showEndUI)
+                          .animate(mnemo.showUIEnd)
                           .fade()
                           .slide(from: const Offset(0, .2)),
                     ],
@@ -143,7 +143,6 @@ class InterfaceLayer extends StatelessWidget {
                     padWidth: padDim,
                     padHeight: padDim,
                     inputPoints: mnemo.painterData,
-                    deltaTime: mnemo.delta.deltaTime.inMilliseconds.toDouble(),
                   ),
                   SizedBox(height: spacing),
                   MyButton(
@@ -157,7 +156,7 @@ class InterfaceLayer extends StatelessWidget {
                           padKey.currentState?.clear();
                         },
                       )
-                      .animate(mnemoData.showEndUI)
+                      .animate(mnemo.showUIEnd)
                       .fade()
                       .slide(from: const Offset(0, .2)),
                 ],

@@ -82,14 +82,12 @@ class MnemosyneData {
   final List<List<double>> latestActivations;
   final Model mnemosyneBrain;
   final int prediction;
-  final bool showEndUI;
 
   const MnemosyneData({
     this.inputs = const [],
     this.latestActivations = const [],
     required this.mnemosyneBrain,
     this.prediction = 0,
-    this.showEndUI = false,
   });
 
   MnemosyneData copyWith({
@@ -97,14 +95,12 @@ class MnemosyneData {
     List<List<double>>? latestActivations,
     Model? mnemosyneBrain,
     int? prediction,
-    bool? showEndUI,
   }) {
     return MnemosyneData(
       inputs: inputs ?? this.inputs,
       latestActivations: latestActivations ?? this.latestActivations,
       mnemosyneBrain: mnemosyneBrain ?? this.mnemosyneBrain,
       prediction: prediction ?? this.prediction,
-      showEndUI: showEndUI ?? this.showEndUI,
     );
   }
 }

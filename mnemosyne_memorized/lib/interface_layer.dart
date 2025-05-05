@@ -4,15 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'database_layer.dart';
-
-const List<Color> networkGraphColors = [
-  //way of depicting geyscale // input on gradient from white to this
-  Color(0xFF9B111E), // Ruby Red L1 on gradient from transparrent to this
-  Color(0xFFFF7E00), // Amber Orange L2 on gradient from transparrent to this
-  Color(0xFFD4AF37), // Royal Gold L3 on gradient from transparrent to this
-  Color(0xFF008B8B), // Deep Teal L4 on gradient from transparrent to this
-  Color(0xFF8A2BE2), // Blue Violet L5 on gradient from transparrent to this
-];
+import 'business_logic_layer.dart';
 
 class PredictionAnimator extends StatefulWidget {
   final double screenWidth;
@@ -20,7 +12,6 @@ class PredictionAnimator extends StatefulWidget {
   final double padWidth;
   final double padHeight;
   final List<Offset?> inputPoints;
-  final double deltaTime;
 
   const PredictionAnimator({
     super.key,
@@ -29,7 +20,6 @@ class PredictionAnimator extends StatefulWidget {
     required this.padWidth,
     required this.padHeight,
     required this.inputPoints,
-    required this.deltaTime,
   });
   @override
   // ignore: library_private_types_in_public_api
@@ -39,12 +29,15 @@ class PredictionAnimator extends StatefulWidget {
 class _PredictionAnimatorState extends State<PredictionAnimator> {
   final GlobalKey _boundaryKey = GlobalKey();
   late final MnemosyneDataStream _dataBloc;
+  late final MnemosyneRootStream _controlBloc;
+
   List<int>? _grid28;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _dataBloc = context.read<MnemosyneDataStream>();
+    _controlBloc = context.read<MnemosyneRootStream>();
   }
 
   @override
@@ -63,21 +56,32 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      key: _boundaryKey,
-      child:
-          _grid28 == null
-              ? CustomPaint(
-                size: Size(widget.padWidth, widget.padHeight),
-                painter: _AnimationInitPainter(
-                  widget.inputPoints,
-                  widget.padWidth / 28,
-                ),
-              )
-              : GreyscaleGrid(
-                values: _grid28!,
-                tileSize: widget.padWidth / 28,
-              ).animate(true).fade(),
+    return Stack(
+      children: [
+        if (!_controlBloc.state.beginSequence)
+          RepaintBoundary(
+            key: _boundaryKey,
+            child:
+                _grid28 == null
+                    ? CustomPaint(
+                      size: Size(widget.padWidth, widget.padHeight),
+                      painter: _AnimationInitPainter(
+                        widget.inputPoints,
+                        widget.padWidth / 28,
+                      ),
+                    )
+                    : GreyscaleGrid(
+                      values: _grid28!,
+                      tileSize: widget.padWidth / 28,
+                    ),
+          ),
+        if (_controlBloc.state.beginSequence)
+          Container(
+            width: widget.screenWidth * .9,
+            height: widget.screenHeight * .8,
+            color: Colors.black,
+          ),
+      ],
     );
   }
 }
@@ -194,32 +198,6 @@ class GreyscaleGrid extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-}
-
-class GreyScaleInputTile extends StatelessWidget {
-  final double percentToEndPos;
-  final double scale;
-  final double xPos;
-  final double yPos;
-  final int greyIndex;
-
-  const GreyScaleInputTile({
-    super.key,
-    required this.percentToEndPos,
-    required this.scale,
-    required this.xPos,
-    required this.yPos,
-    required this.greyIndex,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      borderRadius: BorderRadius.circular(percentToEndPos * scale),
-      color: Color.fromARGB(255, greyIndex, greyIndex, greyIndex),
-      child: SizedBox(height: scale, width: scale),
     );
   }
 }

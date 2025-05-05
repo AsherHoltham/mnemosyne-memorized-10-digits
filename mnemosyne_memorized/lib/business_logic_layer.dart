@@ -38,57 +38,56 @@ class UndoDrawEvent extends MnemosyneEvent {
 
 class StartAnimationEvent extends MnemosyneEvent {
   final List<Offset?> newPoints;
-  StartAnimationEvent(this.newPoints);
+  const StartAnimationEvent(this.newPoints);
 }
 
 class ResetEvent extends MnemosyneEvent {
   const ResetEvent();
 }
 
+// model with copyWith
 class Mnemosyne {
+  final List<Offset?> painterData;
   final DeltaTime delta = DeltaTime.instance;
   final bool hasDrawn;
   final bool startAnimation;
-  final List<Offset?> painterData;
   final bool animationReady;
+  final bool beginSequence;
+  final double sequenceTime;
+  final bool showUIEnd;
 
   Mnemosyne({
+    List<Offset?>? painterData,
     this.hasDrawn = false,
     this.startAnimation = false,
-    List<Offset?>? painterData,
     this.animationReady = false,
-  }) : painterData = painterData ?? [];
+    this.beginSequence = false,
+    this.sequenceTime = 0.0,
+    this.showUIEnd = false,
+  }) : painterData = painterData ?? const [];
 
-  Mnemosyne drawing({bool? hasDrawn}) {
-    return Mnemosyne(
-      hasDrawn: hasDrawn ?? this.hasDrawn,
-      startAnimation: startAnimation,
-      painterData: painterData,
-    );
-  }
-
-  Mnemosyne setAnimationData({
-    bool? startAnimation,
+  Mnemosyne copyWith({
     List<Offset?>? painterData,
+    bool? hasDrawn,
+    bool? startAnimation,
+    bool? animationReady,
+    bool? beginSequence,
+    double? sequenceTime,
+    bool? showUIEnd,
   }) {
     return Mnemosyne(
-      hasDrawn: hasDrawn,
-      startAnimation: startAnimation ?? this.startAnimation,
       painterData: painterData ?? this.painterData,
+      hasDrawn: hasDrawn ?? this.hasDrawn,
+      startAnimation: startAnimation ?? this.startAnimation,
+      animationReady: animationReady ?? this.animationReady,
+      beginSequence: beginSequence ?? this.beginSequence,
+      sequenceTime: sequenceTime ?? this.sequenceTime,
+      showUIEnd: showUIEnd ?? this.showUIEnd,
     );
   }
 
-  Mnemosyne animate() {
-    return Mnemosyne(
-      hasDrawn: hasDrawn,
-      startAnimation: startAnimation,
-      painterData: painterData,
-      animationReady: true,
-    );
-  }
-
-  void outPut() {
-    //print('Δt: ${delta.deltaTime.inMicroseconds} μs');
+  void output() {
+    // print('Δt: ${delta.deltaTime.inMicroseconds} μs');
   }
 }
 
@@ -98,30 +97,37 @@ class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
     SchedulerBinding.instance.addPersistentFrameCallback(_tick);
     SchedulerBinding.instance.scheduleFrame();
 
-    on<OutputEvent>((_, __) => state.outPut());
+    on<OutputEvent>((_, __) => state.output());
 
-    on<DrawEvent>((event, emit) {
-      emit(state.drawing(hasDrawn: true));
-    });
+    on<DrawEvent>((_, emit) => emit(state.copyWith(hasDrawn: true)));
 
-    on<UndoDrawEvent>((event, emit) {
-      emit(state.drawing(hasDrawn: false));
-    });
+    on<UndoDrawEvent>((_, emit) => emit(state.copyWith(hasDrawn: false)));
 
     on<StartAnimationEvent>((event, emit) async {
       emit(
-        state.setAnimationData(
+        state.copyWith(
           startAnimation: true,
           painterData: event.newPoints,
+          animationReady: false,
+          beginSequence: false,
+          showUIEnd: false,
         ),
       );
-      await Future.delayed(const Duration(seconds: 1, milliseconds: 200));
-      emit(state.animate());
+      await Future.delayed(const Duration(milliseconds: 1200));
+      emit(state.copyWith(animationReady: true));
+      await Future.delayed(const Duration(milliseconds: 1200));
+      emit(state.copyWith(beginSequence: true, sequenceTime: 0.0));
+      double time = 0.0;
+      while (time < 2.0) {
+        await Future.delayed(const Duration(milliseconds: 16));
+        final dt = DeltaTime.instance.deltaTime.inMilliseconds / 1000.0;
+        time += dt;
+        emit(state.copyWith(sequenceTime: time.clamp(0.0, 2.0)));
+      }
+      emit(state.copyWith(showUIEnd: true));
     });
 
-    on<ResetEvent>((event, emit) {
-      emit(Mnemosyne());
-    });
+    on<ResetEvent>((_, emit) => emit(Mnemosyne()));
   }
 
   void _tick(Duration timestamp) {
