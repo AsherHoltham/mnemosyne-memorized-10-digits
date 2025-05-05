@@ -435,3 +435,29 @@ class GreyscaleGrid extends StatelessWidget {
     );
   }
 }
+
+class GreyScaleInputTile extends StatelessWidget {
+  final double percentToEndPos;
+  final double scale;
+  final double xPos;
+  final double yPos;
+  final int greyIndex;
+
+  const GreyScaleInputTile({
+    super.key,
+    required this.percentToEndPos,
+    required this.scale,
+    required this.xPos,
+    required this.yPos,
+    required this.greyIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      borderRadius: BorderRadius.circular(percentToEndPos * scale),
+      color: Color.fromARGB(255, greyIndex, greyIndex, greyIndex),
+      child: SizedBox(height: scale, width: scale),
+    );
+  }
+}
