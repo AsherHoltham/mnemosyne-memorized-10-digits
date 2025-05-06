@@ -155,7 +155,7 @@ class InterfaceLayer extends StatelessWidget {
                       .fade()
                       .slide(from: const Offset(0, .2)),
                 ],
-              ),
+              ).animate(!mnemo.animationReady).fade(),
           ],
         ),
       ),
