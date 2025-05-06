@@ -231,12 +231,18 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
           Container(
             width: widget.screenWidth * .9,
             height: widget.screenHeight * .8,
-            color: Colors.white,
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: MnemosynePainter(
-                time: widget.time,
-                data: _dataBloc.state.latestActivations,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 188, 188, 188),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: CustomPaint(
+                painter: MnemosynePainter(
+                  time: widget.time,
+                  data: _dataBloc.state.latestActivations,
+                ),
+                child: const SizedBox.expand(),
               ),
             ),
           ).animate(start).fade(),
