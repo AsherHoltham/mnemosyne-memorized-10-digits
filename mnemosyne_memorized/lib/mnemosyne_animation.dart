@@ -17,32 +17,44 @@ class MnemosynePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    //double blockDim = (size.height * .6) / 28;
-
-    double blockOffset = (size.height / 784);
+    double blockDim = (size.height * .6) / 28;
+    double yOffset = size.height * .2;
+    double xOffset = (size.width - (size.height * .6)) / 2;
 
     for (int i = 0; i < data[0].length; i++) {
+      int row = i ~/ 28;
+      int col = i % 28;
+      double xPos = col * blockDim + xOffset;
+      double yPos = row * blockDim + yOffset;
+
       int alpha = ((data[0][i] * 255).round()).clamp(0, 255);
       Color base = networkGraphColors[0];
       final mPaint = Paint()..color = base.withAlpha(alpha);
-      // Rect rect = Offset(0.0, blockOffset * i) & Size(blockDim, blockDim);
-      // canvas.drawRect(rect, mPaint);
-      canvas.drawCircle(Offset(0.0, blockOffset * i), 2, mPaint);
-      final Offset curr =
-          Offset.lerp(
-            Offset(0.0, blockOffset * i),
-            Offset(size.width / 2, size.height / 2),
-            time / 2.0,
-          ) ??
-          Offset.zero;
-      canvas.drawLine(Offset(0.0, blockOffset * i), curr, mPaint);
+      Rect rect = Offset(xPos, yPos) & Size(blockDim, blockDim);
+      canvas.drawRect(rect, mPaint);
     }
+    // double blockOffset = (size.height / 784);
 
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height / 2),
-      8,
-      Paint()..color = networkGraphColors[0],
-    );
+    // for (int i = 0; i < data[0].length; i++) {
+    //   int alpha = ((data[0][i] * 255).round()).clamp(0, 255);
+    //   Color base = networkGraphColors[0];
+    //   final mPaint = Paint()..color = base.withAlpha(alpha);
+    //   canvas.drawCircle(Offset(0.0, blockOffset * i), 2, mPaint);
+    //   final Offset curr =
+    //       Offset.lerp(
+    //         Offset(0.0, blockOffset * i),
+    //         Offset(size.width / 2, size.height / 2),
+    //         time / 2.0,
+    //       ) ??
+    //       Offset.zero;
+    //   canvas.drawLine(Offset(0.0, blockOffset * i), curr, mPaint);
+    // }
+
+    // canvas.drawCircle(
+    //   Offset(size.width / 2, size.height / 2),
+    //   8,
+    //   Paint()..color = networkGraphColors[0],
+    // );
   }
 
   @override

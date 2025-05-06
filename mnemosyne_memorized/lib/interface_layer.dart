@@ -228,7 +228,7 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
           Container(
             width: widget.screenWidth * .9,
             height: widget.screenHeight * .8,
-            color: Colors.black,
+            color: Colors.white,
             child: CustomPaint(
               size: Size.infinite,
               painter: MnemosynePainter(
