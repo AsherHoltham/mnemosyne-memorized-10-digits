@@ -1,0 +1,7 @@
+{
+  "drawingHeader": "Dibuja un Dígito a Continuación",
+  "resetBtn": "Restablecer Dibujo",
+  "showBtn": "Enséñaselo a Mnemosyne",
+  "drawAgainBtn": "Dibujar de nuevo",
+  "finalResult": "Mnemosyne ve una {Digit}"
+}
