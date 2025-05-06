@@ -1,6 +1,7 @@
 {
-  "drawingHeaderText": "Draw a Digit Below",
-  "newDrawingButton": "Reset Canvas",
-  "showButton": "Show Mnemosyne",
-  "finalResultText": "Mnemosyne sees a {digit}"
+  "drawingHeader": "Draw a Digit Below",
+  "resetBtn": "Reset Drawing",
+  "showBtn": "Show Mnemosyne",
+  "drawAgainBtn": "Draw again",
+  "finalResult": "Mnemosyne sees a {Digit}"
 }

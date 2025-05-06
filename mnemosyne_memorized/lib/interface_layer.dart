@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'database_layer.dart';
 import 'business_logic_layer.dart';
 import 'mnemosyne_animation.dart';
+import 'l10n/app_localizations.dart';
 
 class InterfaceLayer extends StatelessWidget {
   final double time;
@@ -51,7 +52,9 @@ class InterfaceLayer extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       Text(
-                            "Mnemosyne sees a ${mnemoData.prediction}",
+                            AppLocalizations.of(
+                              context,
+                            )!.finalResult(mnemoData.prediction),
                             style: planeTextStyle,
                           )
                           .animate(mnemo.showUIEnd)
@@ -72,7 +75,7 @@ class InterfaceLayer extends StatelessWidget {
                   MyButton(
                         scale: buttonScale,
                         childStyle: buttonTextStyle,
-                        child: const Text("Draw again"),
+                        child: Text(AppLocalizations.of(context)!.drawAgainBtn),
                         onPressed: () {
                           context.read<MnemosyneRootStream>().add(
                             const ResetEvent(),
@@ -93,7 +96,10 @@ class InterfaceLayer extends StatelessWidget {
                   Stack(
                     alignment: Alignment.center,
                     children: [
-                      Text("Draw a Digit Below", style: planeTextStyle)
+                      Text(
+                            AppLocalizations.of(context)!.drawingHeader,
+                            style: planeTextStyle,
+                          )
                           .animate(
                             !mnemo.hasDrawn && !mnemo.startAnimation,
                             duration: const Duration(milliseconds: 200),
@@ -103,7 +109,7 @@ class InterfaceLayer extends StatelessWidget {
                       MyButton(
                             scale: buttonScale,
                             childStyle: buttonTextStyle,
-                            child: const Text("Reset Drawing"),
+                            child: Text(AppLocalizations.of(context)!.resetBtn),
                             onPressed: () {
                               context.read<MnemosyneRootStream>().add(
                                 const UndoDrawEvent(),
@@ -142,7 +148,7 @@ class InterfaceLayer extends StatelessWidget {
                   MyButton(
                         scale: buttonScale,
                         childStyle: buttonTextStyle,
-                        child: const Text("Show Mnemosyne"),
+                        child: Text(AppLocalizations.of(context)!.showBtn),
                         onPressed: () {
                           context.read<MnemosyneRootStream>().add(
                             StartAnimationEvent(

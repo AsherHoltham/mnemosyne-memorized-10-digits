@@ -19,6 +19,7 @@ dependencies:
   flutter_gen: ^5.10.0
 
 dev_dependencies:
+  build_runner: ^2.1.7
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
@@ -32,3 +33,4 @@ flutter:
         - asset: "fonts/AlteHaasGroteskRegular.ttf"
   assets:
     - "lib/data/mnist_weights.json"
+    - lib/l10n/
