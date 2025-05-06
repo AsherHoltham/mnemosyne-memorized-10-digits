@@ -5,6 +5,160 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'database_layer.dart';
 import 'business_logic_layer.dart';
+import 'mnemosyne_animation.dart';
+
+class InterfaceLayer extends StatelessWidget {
+  final double width;
+  final double height;
+  final GlobalKey<DrawingPadState> padKey;
+  final Mnemosyne mnemo;
+  final MnemosyneData mnemoData;
+  final double padDim;
+  final double spacing;
+  final double buttonScale;
+  final TextStyle planeTextStyle;
+  final TextStyle buttonTextStyle;
+
+  const InterfaceLayer({
+    required this.width,
+    required this.height,
+    super.key,
+    required this.padKey,
+    required this.mnemo,
+    required this.mnemoData,
+    required this.padDim,
+    required this.spacing,
+    required this.buttonScale,
+    required this.planeTextStyle,
+    required this.buttonTextStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 42, 42, 42),
+      body: Center(
+        child: Stack(
+          children: [
+            if (mnemo.animationReady)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text(
+                            "Mnemosyne sees a ${mnemoData.prediction}",
+                            style: planeTextStyle,
+                          )
+                          .animate(mnemo.showUIEnd)
+                          .fade()
+                          .slide(from: const Offset(0, .2)),
+                    ],
+                  ),
+                  SizedBox(height: spacing),
+                  PredictionAnimator(
+                    screenWidth: width,
+                    screenHeight: height,
+                    padWidth: padDim,
+                    padHeight: padDim,
+                    inputPoints: mnemo.painterData,
+                  ),
+                  SizedBox(height: spacing),
+                  MyButton(
+                        scale: buttonScale,
+                        childStyle: buttonTextStyle,
+                        child: const Text("Draw again"),
+                        onPressed: () {
+                          context.read<MnemosyneRootStream>().add(
+                            const ResetEvent(),
+                          );
+                          padKey.currentState?.clear();
+                        },
+                      )
+                      .animate(mnemo.showUIEnd)
+                      .fade()
+                      .slide(from: const Offset(0, .2)),
+                ],
+              ),
+            if (!mnemo.animationReady)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text("Draw a Digit Below", style: planeTextStyle)
+                          .animate(
+                            !mnemo.hasDrawn && !mnemo.startAnimation,
+                            duration: const Duration(milliseconds: 200),
+                          )
+                          .fade()
+                          .slide(from: const Offset(0, .2)),
+                      MyButton(
+                            scale: buttonScale,
+                            childStyle: buttonTextStyle,
+                            child: const Text("Reset Drawing"),
+                            onPressed: () {
+                              context.read<MnemosyneRootStream>().add(
+                                const UndoDrawEvent(),
+                              );
+                              padKey.currentState?.clear();
+                            },
+                          )
+                          .animate(mnemo.hasDrawn && !mnemo.startAnimation)
+                          .fade()
+                          .slide(from: const Offset(0, .2)),
+                    ],
+                  ),
+                  SizedBox(height: spacing),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanDown: (_) {
+                      if (!mnemo.startAnimation) {
+                        context.read<MnemosyneRootStream>().add(
+                          const DrawEvent(),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: padDim,
+                      height: padDim,
+                      color: Colors.white,
+                      child: DrawingPad(
+                        key: padKey,
+                        width: padDim,
+                        height: padDim,
+                        enableDrawing: !mnemo.startAnimation,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: spacing),
+                  MyButton(
+                        scale: buttonScale,
+                        childStyle: buttonTextStyle,
+                        child: const Text("Show Mnemosyne"),
+                        onPressed: () {
+                          context.read<MnemosyneRootStream>().add(
+                            StartAnimationEvent(
+                              padKey.currentState?.normalizedPoints ?? [],
+                            ),
+                          );
+                        },
+                      )
+                      .animate(mnemo.hasDrawn && !mnemo.startAnimation)
+                      .fade()
+                      .slide(from: const Offset(0, .2)),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class PredictionAnimator extends StatefulWidget {
   final double screenWidth;
@@ -30,8 +184,7 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
   final GlobalKey _boundaryKey = GlobalKey();
   late final MnemosyneDataStream _dataBloc;
   late final MnemosyneRootStream _controlBloc;
-
-  List<int>? _grid28;
+  bool start = false;
 
   @override
   void didChangeDependencies() {
@@ -44,6 +197,7 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _exportGrid());
+    setState(() => start = false);
   }
 
   Future<void> _exportGrid() async {
@@ -51,35 +205,34 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
     final inputs = grid.map((i) => i.toDouble()).toList();
     _dataBloc.add(UpdateInputData(inputs));
     _dataBloc.add(UpdateActivations());
-    setState(() => _grid28 = grid);
+    await _dataBloc.stream.firstWhere((s) => s.predictionReady);
+    setState(() => start = true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        if (!_controlBloc.state.beginSequence)
+        if (!start)
           RepaintBoundary(
             key: _boundaryKey,
-            child:
-                _grid28 == null
-                    ? CustomPaint(
-                      size: Size(widget.padWidth, widget.padHeight),
-                      painter: _AnimationInitPainter(
-                        widget.inputPoints,
-                        widget.padWidth / 28,
-                      ),
-                    )
-                    : GreyscaleGrid(
-                      values: _grid28!,
-                      tileSize: widget.padWidth / 28,
-                    ),
+            child: CustomPaint(
+              size: Size(widget.padWidth, widget.padHeight),
+              painter: _AnimationInitPainter(
+                widget.inputPoints,
+                widget.padWidth / 28,
+              ),
+            ),
           ),
-        if (_controlBloc.state.beginSequence)
+        if (start)
           Container(
             width: widget.screenWidth * .9,
             height: widget.screenHeight * .8,
             color: Colors.black,
+            child: CustomPaint(
+              size: Size.infinite,
+              painter: MnemosynePainter(time: _controlBloc.state.sequenceTime),
+            ),
           ),
       ],
     );
@@ -201,7 +354,6 @@ class GreyscaleGrid extends StatelessWidget {
     );
   }
 }
-
 // PRE ANIMATION WIDGETS //
 // PRE ANIMATION WIDGETS //
 // PRE ANIMATION WIDGETS //

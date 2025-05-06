@@ -45,20 +45,21 @@ class RootPage extends StatelessWidget {
         final double screenHeight = constraints.maxHeight;
         final double padDim = screenHeight / 1.5;
         final double spacing = screenHeight / 40;
-        final double fontSize = screenWidth * 0.013;
+        final double txtFontSize = screenWidth * 0.018;
+        final double btnFontSize = screenWidth * 0.013;
         final double buttonScale = screenWidth * 1 / 20;
 
         TextStyle planeTextStyle = TextStyle(
           color: Colors.white,
           fontFamily: 'alte haas grotesk',
           fontWeight: FontWeight.w700,
-          fontSize: fontSize,
+          fontSize: txtFontSize,
         );
         TextStyle buttonTextStyle = TextStyle(
           color: Color.fromARGB(255, 42, 42, 42),
           fontFamily: 'alte haas grotesk',
           fontWeight: FontWeight.w900,
-          fontSize: fontSize,
+          fontSize: btnFontSize,
         );
 
         return BlocBuilder<MnemosyneRootStream, Mnemosyne>(

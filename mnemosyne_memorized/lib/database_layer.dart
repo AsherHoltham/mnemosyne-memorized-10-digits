@@ -82,12 +82,14 @@ class MnemosyneData {
   final List<List<double>> latestActivations;
   final Model mnemosyneBrain;
   final int prediction;
+  final bool predictionReady;
 
   const MnemosyneData({
     this.inputs = const [],
     this.latestActivations = const [],
     required this.mnemosyneBrain,
     this.prediction = 0,
+    this.predictionReady = false,
   });
 
   MnemosyneData copyWith({
@@ -95,12 +97,14 @@ class MnemosyneData {
     List<List<double>>? latestActivations,
     Model? mnemosyneBrain,
     int? prediction,
+    bool? predictionReady,
   }) {
     return MnemosyneData(
       inputs: inputs ?? this.inputs,
       latestActivations: latestActivations ?? this.latestActivations,
       mnemosyneBrain: mnemosyneBrain ?? this.mnemosyneBrain,
       prediction: prediction ?? this.prediction,
+      predictionReady: predictionReady ?? this.predictionReady,
     );
   }
 }
@@ -141,7 +145,7 @@ class MnemosyneDataStream extends Bloc<MnemosyneDataEvent, MnemosyneData> {
   }
 
   void onUpdateInputData(UpdateInputData event, Emitter<MnemosyneData> emit) {
-    emit(state.copyWith(inputs: event.newInputs));
+    emit(state.copyWith(inputs: event.newInputs, predictionReady: false));
   }
 
   void onUpdateActivations(
@@ -159,6 +163,12 @@ class MnemosyneDataStream extends Bloc<MnemosyneDataEvent, MnemosyneData> {
         prediction = i;
       }
     }
-    emit(state.copyWith(latestActivations: acts, prediction: prediction));
+    emit(
+      state.copyWith(
+        latestActivations: acts,
+        prediction: prediction,
+        predictionReady: true,
+      ),
+    );
   }
 }
