@@ -231,9 +231,12 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
             color: Colors.black,
             child: CustomPaint(
               size: Size.infinite,
-              painter: MnemosynePainter(time: _controlBloc.state.sequenceTime),
+              painter: MnemosynePainter(
+                time: _controlBloc.state.sequenceTime,
+                data: _dataBloc.state.latestActivations,
+              ),
             ),
-          ),
+          ).animate(start).fade(),
       ],
     );
   }
@@ -321,39 +324,6 @@ class GridExporter {
   }
 }
 
-class GreyscaleGrid extends StatelessWidget {
-  final List<int> values;
-  final double tileSize;
-
-  const GreyscaleGrid({super.key, required this.values, required this.tileSize})
-    : assert(values.length == 28 * 28);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: tileSize * 28,
-      height: tileSize * 28,
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 28,
-          childAspectRatio: 1.0,
-          mainAxisSpacing: 0,
-          crossAxisSpacing: 0,
-        ),
-        itemCount: values.length,
-        itemBuilder: (context, index) {
-          final gray = values[index].clamp(0, 255);
-          return Container(
-            width: tileSize,
-            height: tileSize,
-            color: Color.fromARGB(255, gray, gray, gray),
-          );
-        },
-      ),
-    );
-  }
-}
 // PRE ANIMATION WIDGETS //
 // PRE ANIMATION WIDGETS //
 // PRE ANIMATION WIDGETS //

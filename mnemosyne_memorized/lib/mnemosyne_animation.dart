@@ -11,29 +11,38 @@ const List<Color> networkGraphColors = [
 
 class MnemosynePainter extends CustomPainter {
   final double time;
-  // final List<List<double>> layers;
-  // final List<Offset> startTilesOffsets;
-  // final List<List<Offset>> endNodesOffsets;
+  final List<List<double>> data;
 
-  //   required this.layers,
-  //   required this.startTilesOffsets,
-  //   required this.endNodesOffsets,
-
-  MnemosynePainter({required this.time});
+  MnemosynePainter({required this.time, required this.data});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final mPaint = Paint()..color = networkGraphColors[0];
-    canvas.drawCircle(Offset.zero, 8, mPaint);
-    canvas.drawCircle(Offset(size.width / 2, size.height / 2), 8, mPaint);
-    final Offset curr =
-        Offset.lerp(
-          Offset.zero,
-          Offset(size.width / 2, size.height / 2),
-          time / 2.0,
-        ) ??
-        Offset.zero;
-    canvas.drawLine(Offset.zero, curr, mPaint);
+    //double blockDim = (size.height * .6) / 28;
+
+    double blockOffset = (size.height / 784);
+
+    for (int i = 0; i < data[0].length; i++) {
+      int alpha = ((data[0][i] * 255).round()).clamp(0, 255);
+      Color base = networkGraphColors[0];
+      final mPaint = Paint()..color = base.withAlpha(alpha);
+      // Rect rect = Offset(0.0, blockOffset * i) & Size(blockDim, blockDim);
+      // canvas.drawRect(rect, mPaint);
+      canvas.drawCircle(Offset(0.0, blockOffset * i), 2, mPaint);
+      final Offset curr =
+          Offset.lerp(
+            Offset(0.0, blockOffset * i),
+            Offset(size.width / 2, size.height / 2),
+            time / 2.0,
+          ) ??
+          Offset.zero;
+      canvas.drawLine(Offset(0.0, blockOffset * i), curr, mPaint);
+    }
+
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      8,
+      Paint()..color = networkGraphColors[0],
+    );
   }
 
   @override
