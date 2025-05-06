@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
+//import 'dart:math' as math;
 
 const List<Color> networkGraphColors = [
   //way of depicting geyscale // input on gradient from white to this
@@ -10,101 +10,218 @@ const List<Color> networkGraphColors = [
   Color(0xFF8A2BE2), // Blue Violet L5 on gradient from transparrent to this
 ];
 
-enum MnemosyneState {
-  initial, // .5 seconds
-  movingIntoPlace, // 1.0 seconds
-  drawToL1, // 1.0 Seconds
-  drawToL2, // 1.0 Seconds
-  drawToL3, // 1.0 Seconds
-  drawToL4, // 1.0 Seconds
-  finalModel,
+class BrainEdge {
+  final Offset startPos;
+  final Offset endPos;
+  final double scaledValue;
+  BrainEdge({
+    required this.startPos,
+    required this.endPos,
+    required this.scaledValue,
+  });
+}
+
+class BrainNode {
+  final Offset pos;
+  final int index;
+  final double scaledValue;
+  final double radius;
+  final List<BrainEdge> outEdgeList;
+
+  BrainNode({
+    required this.pos,
+    required this.index,
+    required this.scaledValue,
+    required this.radius,
+    required this.outEdgeList,
+  });
 }
 
 class MnemosynePainter extends CustomPainter {
   final double time;
   final List<List<double>> data;
-  MnemosyneState state = MnemosyneState.initial;
+  List<BrainNode> nodeMap = [];
 
   MnemosynePainter({required this.time, required this.data});
 
-  double _phaseProgress(double t, double start, double duration) {
-    if (t < start) return 0.0;
-    if (t >= start + duration) return 1.0;
-    return (t - start) / duration;
+  List<double> scaleToRange(
+    List<double> values,
+    double maxScale, {
+    double minScale = 0,
+  }) {
+    if (values.isEmpty) return [];
+
+    double minValue = values.reduce((a, b) => a < b ? a : b);
+    double maxValue = values.reduce((a, b) => a > b ? a : b);
+
+    if (minValue == maxValue) {
+      return List.filled(values.length, ((minScale + maxScale) / 2));
+    }
+
+    return values.map((value) {
+      return (((value - minValue) / (maxValue - minValue)) *
+              (maxScale - minScale) +
+          minScale);
+    }).toList();
+  }
+
+  List<BrainNode> initNodeMap(List<List<double>> data, Size size) {
+    List<BrainNode> brainMap = [];
+    double scaleCutOff = .5;
+    for (int layer = 0; layer < data.length - 1; layer++) {
+      int nextLayer = layer + 1;
+      List<double> scaledCurrLayerValues = scaleToRange(data[layer], 1.0);
+      List<double> scaledNextLayerValues = scaleToRange(data[nextLayer], 1.0);
+      for (int node = 0; node < scaledCurrLayerValues.length; node++) {
+        double nodeValue = scaledCurrLayerValues[node];
+        if (nodeValue > scaleCutOff) {
+          double xPos =
+              (size.width * .025) + ((size.width * .95) / 4.5) * layer;
+          double yPos =
+              (size.height * .025) +
+              ((size.height * .95) / scaledCurrLayerValues.length) * node;
+          double nodeRadius = (size.height * .005);
+          Offset nodePos = Offset(xPos, yPos);
+          List<BrainEdge> nodeEdges = [];
+          for (
+            int outNode = 0;
+            outNode < scaledNextLayerValues.length;
+            outNode++
+          ) {
+            if (scaledNextLayerValues[outNode] > scaleCutOff) {
+              double xNextPos =
+                  (size.width * .025) + ((size.width * .95) / 4.5) * nextLayer;
+              double yNextPos =
+                  (size.height * .025) +
+                  ((size.height * .95) / scaledNextLayerValues.length) *
+                      outNode;
+              Offset nextPos = Offset(xNextPos, yNextPos);
+              double edgeValue =
+                  (scaledNextLayerValues[outNode] + nodeValue) / 2;
+              BrainEdge edge = BrainEdge(
+                startPos: nodePos,
+                endPos: nextPos,
+                scaledValue: edgeValue,
+              );
+              nodeEdges.add(edge);
+            }
+          }
+          BrainNode newNode = BrainNode(
+            pos: nodePos,
+            index: layer,
+            scaledValue: nodeValue,
+            radius: nodeRadius,
+            outEdgeList: nodeEdges,
+          );
+          brainMap.add(newNode);
+        }
+      }
+    }
+    for (int outputs = 0; outputs < 10; outputs++) {
+      double xPos = (size.width * .025) + ((size.width * .95) / 4.5) * 4;
+      double yPos = (size.height * .025) + ((size.height * .95) / 10) * outputs;
+      double nodeRadius = ((size.height * .95) / 10) / 3;
+      Offset nodePos = Offset(xPos, yPos);
+      BrainNode outNode = BrainNode(
+        pos: nodePos,
+        index: 4,
+        scaledValue: data[4][outputs],
+        radius: nodeRadius,
+        outEdgeList: [],
+      );
+      brainMap.add(outNode);
+    }
+    //print(brainMap.length);
+    return brainMap;
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cycleTime = time % 5.5;
-
-    final initPct = _phaseProgress(cycleTime, 0.0, 0.5);
-    final mvPct = _phaseProgress(cycleTime, 0.5, 1.0);
-    final l1Pct = _phaseProgress(cycleTime, 1.5, 1.0);
-    // final l2Pct = _phaseProgress(cycleTime, 2.5, 1.0);
-    // final l3Pct = _phaseProgress(cycleTime, 3.5, 1.0);
-    // final l4Pct = _phaseProgress(cycleTime, 4.5, 1.0);
-
-    if (cycleTime < 0.5) {
-      _drawInitial(canvas, size, initPct);
-    } else if (cycleTime < 1.5) {
-      _drawMove(canvas, size, mvPct);
-    }
-    // else if (cycleTime < 2.5) {
-    //   print("Here");
-    //   _drawL1(canvas, size, l1Pct);
-    // }
-    //else if (cycleTime < 3.5) {
-    //   _drawL2(canvas, size, l2Pct);
-    // } else if (cycleTime < 4.5) {
-    //   _drawL3(canvas, size, l3Pct);
-    // } else {
-    //   _drawL4AndFinal(canvas, size, l4Pct);
-    // }
-  }
-
-  void _drawInitial(canvas, size, initPct) {
-    double blockDim = (size.height * .6) / 28;
-    double yOffset = size.height * .2;
-    double xOffset = (size.width - (size.height * .6)) / 2;
-
-    for (int i = 0; i < data[0].length; i++) {
-      int row = i ~/ 28;
-      int col = i % 28;
-      double xPos = col * blockDim + xOffset;
-      double yPos = row * blockDim + yOffset;
-
-      int alpha = ((data[0][i] * 255).round()).clamp(0, 255);
-      Color base = networkGraphColors[0];
+    canvas.drawCircle(Offset(0, 0), 10, Paint()..color = Colors.black);
+    canvas.drawCircle(
+      Offset(0, size.height),
+      10,
+      Paint()..color = Colors.black,
+    );
+    canvas.drawCircle(Offset(size.width, 0), 10, Paint()..color = Colors.black);
+    canvas.drawCircle(
+      Offset(size.width, size.height),
+      10,
+      Paint()..color = Colors.black,
+    );
+    nodeMap = initNodeMap(data, size);
+    for (int i = 0; i < nodeMap.length; i++) {
+      int alpha = (nodeMap[i].scaledValue * 255).round().clamp(0, 255);
+      Color base = networkGraphColors[nodeMap[i].index];
       final mPaint = Paint()..color = base.withAlpha(alpha);
-      Rect rect = Offset(xPos, yPos) & Size(blockDim, blockDim);
-      canvas.drawRect(rect, mPaint);
+      canvas.drawCircle(nodeMap[i].pos, nodeMap[i].radius, mPaint);
+      for (int j = 0; j < nodeMap[i].outEdgeList.length; j++) {
+        int lineAlpha = (nodeMap[i].outEdgeList[j].scaledValue * 255)
+            .round()
+            .clamp(0, 255);
+        final linePaint =
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = .5
+              ..color = networkGraphColors[nodeMap[i].index].withAlpha(
+                lineAlpha,
+              );
+        canvas.drawLine(
+          nodeMap[i].outEdgeList[j].startPos,
+          nodeMap[i].outEdgeList[j].endPos,
+          linePaint,
+        );
+      }
     }
   }
 
-  void _drawMove(canvas, size, mvPct) {
-    double yOffset = size.height * .2;
-    double xOffset = (size.width - (size.height * .6)) / 2;
-    int index = 0;
-    for (int i = 0; i < data[index].length; i++) {
-      double blockDim = (size.height * .6) / math.max(28, 28 * mvPct * 2);
-      int row = i ~/ 28;
-      int col = i % 28;
-      double xPos = col * blockDim + xOffset;
-      double yPos = row * blockDim + yOffset;
-      double xEndPos = (size.width / 10) + (size.width / 5) * index;
-      double yEndPos = ((size.height * .95) / data[index].length) * i;
-      Offset start = Offset(xPos, yPos);
-      Offset end = Offset(xEndPos, yEndPos);
-      Offset curr = Offset.lerp(start, end, mvPct) ?? start;
-      int alpha = ((data[index][i] * 255).round()).clamp(0, 255);
-      Color base = networkGraphColors[index];
-      final mPaint = Paint()..color = base.withAlpha(alpha);
-      final rect = Rect.fromLTWH(curr.dx, curr.dy, blockDim, blockDim);
-      final double radius = mvPct * 4;
-      final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
-      canvas.drawRRect(rrect, mPaint);
-    }
-  }
+  @override
+  bool shouldRepaint(MnemosynePainter old) => false;
+}
+
+// void _drawInitial(canvas, size, initPct) {
+  //   double blockDim = (size.height * .6) / 28;
+  //   double yOffset = size.height * .2;
+  //   double xOffset = (size.width - (size.height * .6)) / 2;
+
+  //   for (int i = 0; i < data[0].length; i++) {
+  //     int row = i ~/ 28;
+  //     int col = i % 28;
+  //     double xPos = col * blockDim + xOffset;
+  //     double yPos = row * blockDim + yOffset;
+
+  //     int alpha = ((data[0][i] * 255).round()).clamp(0, 255);
+  //     Color base = networkGraphColors[0];
+  //     final mPaint = Paint()..color = base.withAlpha(alpha);
+  //     Rect rect = Offset(xPos, yPos) & Size(blockDim, blockDim);
+  //     canvas.drawRect(rect, mPaint);
+  //   }
+  // }
+
+  // void _drawMove(canvas, size, mvPct) {
+  //   double yOffset = size.height * .2;
+  //   double xOffset = (size.width - (size.height * .6)) / 2;
+  //   int index = 0;
+  //   for (int i = 0; i < data[index].length; i++) {
+  //     double blockDim = (size.height * .6) / math.max(28, 28 * mvPct * 2);
+  //     int row = i ~/ 28;
+  //     int col = i % 28;
+  //     double xPos = col * blockDim + xOffset;
+  //     double yPos = row * blockDim + yOffset;
+  //     double xEndPos = (size.width / 10) + (size.width / 5) * index;
+  //     double yEndPos = ((size.height * .95) / data[index].length) * i;
+  //     Offset start = Offset(xPos, yPos);
+  //     Offset end = Offset(xEndPos, yEndPos);
+  //     Offset curr = Offset.lerp(start, end, mvPct) ?? start;
+  //     int alpha = ((data[index][i] * 255).round()).clamp(0, 255);
+  //     Color base = networkGraphColors[index];
+  //     final mPaint = Paint()..color = base.withAlpha(alpha);
+  //     final rect = Rect.fromLTWH(curr.dx, curr.dy, blockDim, blockDim);
+  //     final double radius = mvPct * 4;
+  //     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+  //     canvas.drawRRect(rrect, mPaint);
+  //   }
+  // }
 
   // void _drawL1(canvas, size, l1Pct) {
   //   int index = 0;
@@ -131,9 +248,3 @@ class MnemosynePainter extends CustomPainter {
   //     }
   //   }
   // }
-
-  @override
-  bool shouldRepaint(MnemosynePainter old) {
-    return old.time != time || old.data != data;
-  }
-}
