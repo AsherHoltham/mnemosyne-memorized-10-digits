@@ -118,7 +118,7 @@ class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
       await Future.delayed(const Duration(milliseconds: 200));
       emit(state.copyWith(beginSequence: true, sequenceTime: 0.0));
       double time = 0.0;
-      while (time < 2.0) {
+      while (time < 5.5) {
         await Future.delayed(const Duration(milliseconds: 16));
         final dt = DeltaTime.instance.deltaTime.inMilliseconds / 1000.0;
         time += dt;
