@@ -122,7 +122,7 @@ class MnemosyneRootStream extends Bloc<MnemosyneEvent, Mnemosyne> {
         await Future.delayed(const Duration(milliseconds: 16));
         final dt = DeltaTime.instance.deltaTime.inMilliseconds / 1000.0;
         time += dt;
-        emit(state.copyWith(sequenceTime: time.clamp(0.0, 2.0)));
+        emit(state.copyWith(sequenceTime: time.clamp(0.0, 5.5)));
       }
       emit(state.copyWith(showUIEnd: true));
     });

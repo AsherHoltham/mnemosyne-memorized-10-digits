@@ -150,8 +150,13 @@ class MnemosynePainter extends CustomPainter {
       _drawMove(canvas, size, mvPct);
     }
     if (!runAnimation) {
-      _drawFullGraph(canvas, size, nodeMap);
-      animationFinished = true;
+      double percent = (time - 1.5) / 4.0;
+      if (percent < 1) {
+        _drawAccrossGraph(canvas, size, nodeMap, percent);
+      } else {
+        _drawFullGraph(canvas, size, nodeMap);
+        animationFinished = true;
+      }
     }
   }
 
@@ -178,6 +183,7 @@ class MnemosynePainter extends CustomPainter {
     double yOffset = size.height * .2;
     double xOffset = (size.width - (size.height * .6)) / 2;
     int index = 0;
+    List<double> alphas = scaleToRange(data[index], 1);
     for (int i = 0; i < data[index].length; i++) {
       double blockDim = (size.height * .6) / math.max(28, 28 * mvPct * 2);
       int row = i ~/ 28;
@@ -190,10 +196,10 @@ class MnemosynePainter extends CustomPainter {
       Offset start = Offset(xPos, yPos);
       Offset end = Offset(xEndPos, yEndPos);
       Offset curr = Offset.lerp(start, end, mvPct) ?? start;
-      int alpha = ((data[index][i] * 255).round()).clamp(0, 255);
+      int alpha = ((alphas[i] * 255).round()).clamp(0, 255);
       Color base = networkGraphColors[index];
       final mPaint = Paint()..color = base.withAlpha(alpha);
-      if (alpha > .5) {
+      if ((alpha / 255) > .5) {
         if (mvPct < .95) {
           final rect = Rect.fromLTWH(curr.dx, curr.dy, blockDim, blockDim);
           final double radius = mvPct * 4;
@@ -206,32 +212,54 @@ class MnemosynePainter extends CustomPainter {
     }
   }
 
-  // void _drawAccrossGraph(canvas, size, nodeMap, percent) {
-  //   //double currXValue =
-  //   for (int i = 0; i < nodeMap.length; i++) {
-  //     int alpha = (nodeMap[i].scaledValue * 255).round().clamp(0, 255);
-  //     Color base = networkGraphColors[nodeMap[i].index];
-  //     final mPaint = Paint()..color = base.withAlpha(alpha);
-  //     canvas.drawCircle(nodeMap[i].pos, nodeMap[i].radius, mPaint);
-  //     for (int j = 0; j < nodeMap[i].outEdgeList.length; j++) {
-  //       int lineAlpha = (nodeMap[i].outEdgeList[j].scaledValue * 255)
-  //           .round()
-  //           .clamp(0, 255);
-  //       final linePaint =
-  //           Paint()
-  //             ..style = PaintingStyle.stroke
-  //             ..strokeWidth = .5
-  //             ..color = networkGraphColors[nodeMap[i].index].withAlpha(
-  //               lineAlpha,
-  //             );
-  //       canvas.drawLine(
-  //         nodeMap[i].outEdgeList[j].startPos,
-  //         nodeMap[i].outEdgeList[j].endPos,
-  //         linePaint,
-  //       );
-  //     }
-  //   }
-  // }
+  void _drawAccrossGraph(canvas, size, nodeMap, percent) {
+    double currXValue = size.width * percent;
+    for (int i = 0; i < nodeMap.length; i++) {
+      if (nodeMap[i].pos.dx < currXValue) {
+        int alpha = (nodeMap[i].scaledValue * 255).round().clamp(0, 255);
+        Color base = networkGraphColors[nodeMap[i].index];
+        final mPaint = Paint()..color = base.withAlpha(alpha);
+        canvas.drawCircle(nodeMap[i].pos, nodeMap[i].radius, mPaint);
+        for (int j = 0; j < nodeMap[i].outEdgeList.length; j++) {
+          int lineAlpha = (nodeMap[i].outEdgeList[j].scaledValue * 255)
+              .round()
+              .clamp(0, 255);
+          final linePaint =
+              Paint()
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = .5
+                ..color = networkGraphColors[nodeMap[i].index].withAlpha(
+                  lineAlpha,
+                );
+          double lineEndX = nodeMap[i].outEdgeList[j].endPos.dx;
+          double lineStartX = nodeMap[i].outEdgeList[j].startPos.dx;
+
+          if (lineEndX > currXValue) {
+            double lineXlength = (lineEndX - lineStartX);
+            double linePercentDrawn = (currXValue - lineStartX) / lineXlength;
+            Offset currPos =
+                Offset.lerp(
+                  nodeMap[i].outEdgeList[j].startPos,
+                  nodeMap[i].outEdgeList[j].endPos,
+                  linePercentDrawn,
+                ) ??
+                nodeMap[i].outEdgeList[j].startPos;
+            canvas.drawLine(
+              nodeMap[i].outEdgeList[j].startPos,
+              currPos,
+              linePaint,
+            );
+          } else {
+            canvas.drawLine(
+              nodeMap[i].outEdgeList[j].startPos,
+              nodeMap[i].outEdgeList[j].endPos,
+              linePaint,
+            );
+          }
+        }
+      }
+    }
+  }
 
   void _drawFullGraph(canvas, size, nodeMap) {
     for (int i = 0; i < nodeMap.length; i++) {

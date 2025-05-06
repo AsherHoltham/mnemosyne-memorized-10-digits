@@ -8,6 +8,7 @@ import 'business_logic_layer.dart';
 import 'mnemosyne_animation.dart';
 
 class InterfaceLayer extends StatelessWidget {
+  final double time;
   final double width;
   final double height;
   final GlobalKey<DrawingPadState> padKey;
@@ -20,6 +21,7 @@ class InterfaceLayer extends StatelessWidget {
   final TextStyle buttonTextStyle;
 
   const InterfaceLayer({
+    required this.time,
     required this.width,
     required this.height,
     super.key,
@@ -59,6 +61,7 @@ class InterfaceLayer extends StatelessWidget {
                   ),
                   SizedBox(height: spacing),
                   PredictionAnimator(
+                    time: time,
                     screenWidth: width,
                     screenHeight: height,
                     padWidth: padDim,
@@ -161,6 +164,7 @@ class InterfaceLayer extends StatelessWidget {
 }
 
 class PredictionAnimator extends StatefulWidget {
+  final double time;
   final double screenWidth;
   final double screenHeight;
   final double padWidth;
@@ -169,6 +173,7 @@ class PredictionAnimator extends StatefulWidget {
 
   const PredictionAnimator({
     super.key,
+    required this.time,
     required this.screenWidth,
     required this.screenHeight,
     required this.padWidth,
@@ -183,14 +188,12 @@ class PredictionAnimator extends StatefulWidget {
 class _PredictionAnimatorState extends State<PredictionAnimator> {
   final GlobalKey _boundaryKey = GlobalKey();
   late final MnemosyneDataStream _dataBloc;
-  late final MnemosyneRootStream _controlBloc;
   bool start = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _dataBloc = context.read<MnemosyneDataStream>();
-    _controlBloc = context.read<MnemosyneRootStream>();
   }
 
   @override
@@ -232,7 +235,7 @@ class _PredictionAnimatorState extends State<PredictionAnimator> {
             child: CustomPaint(
               size: Size.infinite,
               painter: MnemosynePainter(
-                time: _controlBloc.state.sequenceTime,
+                time: widget.time,
                 data: _dataBloc.state.latestActivations,
               ),
             ),
